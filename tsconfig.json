@@ -1,0 +1,43 @@
+{
+    "compilerOptions": {
+        // ECMAScript目标版本
+        "target": "esnext",
+        // 指定生成哪个模块系统代码
+        "module": "esnext",
+        // 是否生成source map文件
+        "sourceMap": true,
+        // 是否编译js文件
+        "allowJs": true,
+        // 是否默认禁用any
+        "noImplicitAny": false,
+        // jsx编译方式 [https://www.typescriptlang.org/docs/handbook/jsx.html]
+        "jsx": "preserve",
+        // 从tslib导入辅助工具函数
+        "importHelpers": true,
+        // 指定模块解析策略
+        "moduleResolution": "node",
+        // 启用实验性质的装饰器
+        "experimentalDecorators": true,
+        // 支持使用import d from 'cjs'的方式引入commonjs包。
+        "esModuleInterop": true,
+        // 不同方式的导出兼容
+        "allowSyntheticDefaultImports": true,
+        // 基础路径
+        "baseUrl": ".",
+        // 指定模块路径别名
+        "paths": {
+            "@/*": [
+                "src/*"
+            ]
+        },
+    },
+    // 包含路径
+    "include": [
+        "./src/**/*",
+        "./test/**/*"
+    ],
+    // 不包含路径
+    "exclude": [
+        "node_modules"
+    ]
+}
