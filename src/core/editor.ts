@@ -5,6 +5,23 @@ import Transform from './transform';
 import Line from '@/graphics/beeline';
 import LineGraphics from '../graphics/line';
 import Beeline from '@/graphics/beeline';
+import { MoveBlock, MoveBlockParmas } from '../graphics/moveblock';
+
+/** 拖拽配置 */
+interface DragConfig {
+    /** 是否开始拖拽 */
+    isDrag: boolean;
+    /** 拖拽对象 */
+    graphics: Graphics[];
+    /** 拖拽点横坐标 */
+    x1: number;
+    /** 拖拽点纵坐标 */
+    y1: number;
+    /** 终止点横坐标 */
+    x2: number;
+    /** 终止点纵坐标 */
+    y2: number;
+}
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -131,16 +148,22 @@ export default class Editor {
     get canvasWidth() {
         return this.canvasElement.offsetWidth;
     }
-    set canvasWidth(width: number) {
-        this.svgElement.style.width = width + 'px';
-    }
-
     /** 视窗高度 */
     get canvasHeight() {
         return this.canvasElement.offsetHeight;
     }
-    set canvasHeight(height: number) {
-        this.svgElement.style.height = height + 'px';
+
+    get svgWidth() {
+        return this.svgElement.clientWidth;
+    }
+    set svgWidth(val: number) {
+        this.svgElement.setAttribute('width', '' + val);
+    }
+    get svgHeight() {
+        return this.svgElement.clientHeight;
+    }
+    set svgHeight(val: number) {
+        this.svgElement.setAttribute('height', '' + val);
     }
 
     /** 纵向滚动条位置 */
@@ -159,25 +182,50 @@ export default class Editor {
         this.canvasElement.scrollLeft = left;
     }
 
-    /** 图形区域离顶部距离 */
+    /** 图形区域 */
     regionRect = {
         /** 图形区域离顶部距离 */
         top: 0,
         /** 图形区域离左侧距离 */
         left: 0,
+        /** 滚动条横坐标 */
+        locX: 0,
+        /** 滚动条纵坐标 */
+        locY: 0,
         /** 图形区域计算宽度 */
         width: 0,
         /** 图形区域计算宽度 */
         height: 0,
     };
 
-    /** 根据浏览器视窗高宽度自动计算画布并计算偏移量 */
+    /** 拖拽配置项 */
+    dragConfig: DragConfig = {
+        isDrag: false,
+        graphics: [],
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 0
+    };
+
+    /** 根据浏览器视窗高宽度自动计算画布宽高度 */
     private autoFit() {
         // 重算画布宽高
-        this.canvasWidth = this.regionRect.width + this.canvasWidth * 2 + 120;
-        this.canvasHeight = this.regionRect.height + this.canvasHeight * 2 + 120;
+        this.svgWidth = this.regionRect.width + this.canvasWidth * 2 + 120;
+        this.svgHeight = this.regionRect.height + this.canvasHeight * 2 + 120;
+    }
 
-        this.svgElement.style.backgroundPosition = `${this.canvasWidth % 40}px ${this.canvasHeight % 40}px`;
+    /** 根据视窗重绘背景网格图 */
+    private autoAdjustBackground() {
+        let _locX = (this.svgWidth) % 40;
+        let _locY = (this.svgHeight) % 40;
+        this.svgElement.style.backgroundPosition = `${_locX}px ${_locY}px`;
+    }
+
+    private autoAdjustBackgroundByResize() {
+        let _locX = (this.canvasWidth) % 40;
+        let _locY = (this.canvasHeight) % 40;
+        this.svgElement.style.backgroundPosition = `${_locX}px ${_locY}px`;
     }
 
     /** 重新计算真实图形区域宽高度 */
@@ -188,36 +236,53 @@ export default class Editor {
         this.regionRect.left = this.canvasWidth - _rect.x;
         this.regionRect.top = this.canvasHeight - _rect.y;
 
-        if (_rect.x < this.canvasWidth) {
-            this.transform.offsetX += this.canvasWidth - _rect.x;
-            this.locationLeft += this.canvasWidth - _rect.x;
-        } else {
-            this.transform.offsetX -= _rect.x - this.canvasWidth;
-            this.locationLeft -= _rect.x - this.canvasWidth;
+        if (_rect.x < this.canvasWidth - 100) {
+            this.transform.offsetX += 400;
+            this.locationLeft += 400;
+        } else if (_rect.x + 60 > this.svgWidth + 100) {
+            this.transform.offsetX -= 400;
+            this.locationLeft -= 400;
         }
-        
-        if (_rect.y < this.canvasHeight) {
-            this.transform.offsetY += this.canvasHeight - _rect.y + 60;
-            this.locationTop += this.canvasHeight - _rect.y + 60;
-        } else {
-            this.transform.offsetY -= _rect.y - this.canvasHeight - 60;
-            this.locationTop -= _rect.y - this.canvasHeight - 60;
+        if (_rect.x + _rect.width > this.svgWidth - this.canvasWidth + 100) {
+            this.transform.offsetX -= 400;
+            this.locationLeft -= 400;
+        } else if (_rect.x + this.regionRect.width + 60 < this.svgWidth - this.canvasWidth - 100) {
+            this.transform.offsetX += 400;
+            this.locationLeft += 400;
         }
 
+        if (_rect.y < this.canvasHeight - 100) {
+            this.transform.offsetY += 400;
+            this.locationTop += 400;
+        } else if (_rect.y > this.canvasHeight * 2 + 100) {
+            this.transform.offsetY -= 400;
+            this.locationTop -= 400;
+        }
+        if (_rect.y + _rect.height > this.svgHeight - this.canvasHeight + 100) {
+            this.transform.offsetY -= 400;
+            this.locationTop -= 400;
+        } else if (_rect.y + this.regionRect.height + 60 < this.svgHeight - this.canvasHeight - 100) {
+            this.transform.offsetY += 400;
+            this.locationTop += 400;
+        }
+        
     }
 
     /** 添加图形 */
-    addGraphics(graphics: Graphics) {
-        this.graphicsMap.push(graphics);
-        this.svgGroupElement.appendChild(graphics.render(this.transform));
+    addGraphics(...graphics: Graphics[]) {
+        for (let i = 0; i < graphics.length; i++) {
+            this.graphicsMap.push(graphics[i]);
+            this.svgGroupElement.appendChild(graphics[i].render(this.transform));
+        }
         this.reSizeComputed();
+        this.autoAdjustBackground();
     }
 
     /** 添加辅助线 */
     addGuideLine(isVertical: boolean, loc: number) {
         const _line = new Beeline({
-            x1: isVertical ? loc : -9999,
-            y1: isVertical ? -9999 : loc,
+            x: isVertical ? loc : -9999,
+            y: isVertical ? -9999 : loc,
             x2: isVertical ? loc : 9999,
             y2: isVertical ? 9999 : loc,
             stroke: 'green',
@@ -225,6 +290,30 @@ export default class Editor {
         });
         this.svgElement.appendChild(_line.render(this.transform));
         this.graphicsGuideMap.push(_line);
+    }
+
+    /** 开始拖拽 */
+    startMulSelect() {
+        
+    }
+
+    /** 清空辅助操作工具 */
+    clearGuideTool() {
+        this.graphicsGuideMap.forEach(i => {
+            i.type === 'move-block' && i.destroy();
+        });
+        this.graphicsGuideMap = this.graphicsGuideMap.filter(i => i.type !== GraphicsType.moveblock);
+    }
+
+    /** 添加辅助操作工具 */
+    addGuideTool(graphicsTarget: Graphics) {
+        const _tool = new MoveBlock({
+            graphicsTarget,
+            x: graphicsTarget.x,
+            y: graphicsTarget.y
+        });
+        this.svgElement.appendChild(_tool.render(this.transform));
+        this.graphicsGuideMap.push(_tool);
     }
 
     /** 重绘所有子节点 */
@@ -246,23 +335,75 @@ export default class Editor {
         
         window.addEventListener('resize', e => {
             this.reSizeComputed();
+            this.autoAdjustBackgroundByResize();
             this.autoFit();
             this.refresh();
         });
 
+        this.canvasElement.addEventListener('scroll', e => {
+            if (!this.dragConfig.isDrag) {
+            }
+        });
+
+        this.svgElement.addEventListener('mousedown', e => {
+            let _gid = (e.target as Element).getAttribute('gid');
+            this.clearGuideTool();
+
+            if (_gid) {
+                this.dragConfig.graphics = this.graphicsMap.filter(i => i.id === _gid);
+                /** 之后需要调整为获取最左上角的组件，并获取整体宽高 */
+                let _topGraphics = this.dragConfig.graphics[0];
+                this.dragConfig.isDrag = true;
+                this.dragConfig.x1 = e.offsetX - this.transform.offsetX - _topGraphics.x;
+                this.dragConfig.y1 = e.offsetY - this.transform.offsetY - _topGraphics.y;
+
+                this.addGuideTool(_topGraphics);
+            }
+        });
+
+        this.svgElement.addEventListener('mousemove', e => {
+            if (this.dragConfig.isDrag) {
+                this.dragConfig.graphics.forEach(i => {
+                    this.graphicsGuideMap.filter(i => i.type === GraphicsType.moveblock).forEach(i => i.setLocation(
+                        e.offsetX - this.transform.offsetX - this.dragConfig.x1, 
+                        e.offsetY - this.transform.offsetY - this.dragConfig.y1, 
+                        this.transform
+                    ));
+                });
+            }
+        });
+
+        document.body.addEventListener('mouseup', e => {
+            this.dragConfig.isDrag = false;
+
+            if (this.dragConfig.x1 && this.dragConfig.y1) {
+                this.reSizeComputed();
+                this.autoFit();
+                this.refresh();
+            }
+
+            this.dragConfig.x2 = e.offsetX;
+            this.dragConfig.y2 = e.offsetY;
+
+            this.dragConfig.graphics = [];
+            this.dragConfig.x1 = 0;
+            this.dragConfig.y1 = 0;
+            this.dragConfig.x2 = 0;
+            this.dragConfig.y2 = 0;
+        });
+
         this.autoFit();
-        // 计算整体画布偏移量
-        this.transform.offsetX = this.canvasWidth * 1.5;
-        this.transform.offsetY = this.canvasHeight * 1.5;
-        this.locationLeft = this.canvasWidth;
-        this.locationTop = this.canvasHeight;
         this.reSizeComputed();
-        this.refresh();
 
         setTimeout(() => {
-            this.reSizeComputed();
+            // 计算整体画布偏移量
+            this.transform.offsetX = this.canvasWidth + this.regionRect.width * 0.5;
+            this.transform.offsetY = this.canvasHeight + this.regionRect.height * 0.5;
+            this.locationLeft = this.canvasWidth * 0.5 + this.regionRect.width * 0.5;
+            this.locationTop = this.canvasHeight * 0.5 + this.regionRect.height * 0.5;
             this.autoFit();
             this.refresh();
+            this.autoAdjustBackground();
             console.timeEnd('editor-init');
         }, 1);
     }

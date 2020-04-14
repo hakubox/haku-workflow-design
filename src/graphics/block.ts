@@ -8,7 +8,7 @@ export class BlockGraphicsParams extends GraphicsParams {
     /** 坐标Y */
     y: number;
     /** 填充颜色 */
-    fill: string;
+    fill?: string;
 }
 
 /** 方块图形 */
@@ -29,9 +29,15 @@ export default abstract class BlockGraphics extends Graphics {
     fill: string;
     /** 子节点 */
     children: Graphics[] = [];
-    
-    /** 设置坐标 */
-    abstract setLocation(config: { x: number, y: number, offsetX: number, offsetY: number }): void;
+
+    /** 移除节点 */
+    public destroy() {
+        this.children.forEach(i => {
+            i.destroy();
+        });
+        this.graphics.parentNode.removeChild(this.graphics);
+        this.graphics = null;
+    }
 
     abstract render(transform: Transform);
 }

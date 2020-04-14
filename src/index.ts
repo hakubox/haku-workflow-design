@@ -1,58 +1,31 @@
 import { Editor } from '@/core';
 import "./assets/basic.scss";
 import { Rect } from './graphics';
+import './enum';
 
 console.time('editor-init');
 
 window['editor'] = new Editor({
     onInit(callback) {
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: 0,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: -300,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: -600,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: -900,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: 300,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: 600,
-            fill: 'red'
-        }));
-        this.addGraphics(new Rect({
-            radius: 50,
-            x: 0,
-            y: 900,
-            fill: 'red'
-        }));
+        this.addGraphics(
+            ...[
+                [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800],
+                [-800, 0], [-600, 0], [-400, 0], [-200, 0], [0, 0], [200, 0], [400, 0], [600, 0], [800, 0],
+                // [0, 0]
+            ].map(i => new Rect({
+                radius: 8,
+                x: i[0],
+                y: i[1],
+                width: 100,
+                height: 100,
+                fill: '#1890FF'
+            }))
+        );
         this.addGuideLine(true, 0);
         this.addGuideLine(false, 0);
         setTimeout(() => {
             callback();
-        }, 100);
+        }, 10);
     }
 });
 console.log(window['editor']);

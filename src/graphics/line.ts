@@ -19,13 +19,6 @@ export default abstract class Line extends Graphics {
     /** 图形id */
     readonly id: string;
 
-    /** 移除节点 */
-    public destroy() {
-        this.graphics.parentNode.removeChild(this.graphics);
-    }
-    /** 设置坐标 */
-    abstract setLocation(config: { offsetX: number, offsetY: number }): void;
-
     /** 获取图形宽度 */
     abstract getWidth(): number;
     /** 获取图形高度 */

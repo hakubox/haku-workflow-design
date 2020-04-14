@@ -83,7 +83,7 @@ interface DomAttr {
     events?: Record<string, (target: EventTarget) => void>;
 }
 
-function mergeAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: HTMLElement[] = []) {
+function mergeAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: Element[] = []) {
     attrs.style && Object.entries(attrs.style).forEach(([key, value]) => {
         dom.style[key] = value;
     });
@@ -100,7 +100,7 @@ function mergeAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children
 }
 
 /** 构建SVG节点 */
-export function createSVGElement(nodeName: string, attrs: DomAttr = {}, children: HTMLElement[] = []) {
+export function createSVGElement(nodeName: string, attrs: DomAttr = {}, ...children: SVGElement[]) {
     if (!attrs.parent) {
         attrs.parent = document.body;
     }
@@ -110,7 +110,7 @@ export function createSVGElement(nodeName: string, attrs: DomAttr = {}, children
 }
 
 /** 构建HTML节点 */
-export function createElement(nodeName: string, attrs: DomAttr = {}, children: HTMLElement[] = []): HTMLElement {
+export function createElement(nodeName: string, attrs: DomAttr = {}, ...children: HTMLElement[]): HTMLElement {
     if (!attrs.parent) {
         attrs.parent = document.body;
     }

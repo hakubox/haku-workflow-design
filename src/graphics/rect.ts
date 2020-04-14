@@ -3,8 +3,12 @@ import { createSVGElement } from "@/tools";
 import Transform from '@/core/transform';
 
 export class RectParams extends BlockGraphicsParams {
-    /** 半径 */
+    /** 圆角半径 */
     radius: number;
+    /** 宽度 */
+    width: number;
+    /** 高度 */
+    height: number;
 }
 
 /** 矩形 */
@@ -13,31 +17,45 @@ export default class Rect extends BlockGraphics {
         super(config);
 
         this.radius = config.radius;
+        this.width = config.width;
+        this.height = config.height;
     }
 
-    /** 半径 */
+    type = GraphicsType.rect;
+    description = '矩形';
+    /** 圆角半径 */
     radius: number;
+    /** 宽度 */
+    width: number;
+    /** 高度 */
+    height: number;
 
     
     getWidth() {
-        return this.radius * 2;
+        return this.width;
     }
 
     getHeight() {
-        return this.radius * 2;
+        return this.height;
     }
     
-    setLocation(config: { x: number; y: number; offsetX: number; offsetY: number; }): void {
-        
+    setLocation(x: number, y: number, transform: Transform): void {
+        this.x = x;
+        this.y = y;
+        this.graphics.setAttribute('x', x + transform.offsetX + '');
+        this.graphics.setAttribute('y', y + transform.offsetY + '');
     }
 
     render(transform: Transform = new Transform()) {
-        return this._render(createSVGElement('circle', {
+        return this._render(createSVGElement('rect', {
             attrs: {
-                cx: this.x + this.radius + transform.offsetX,
-                cy: this.y + this.radius + transform.offsetY,
-                r: this.radius,
-                fill: 'red'
+                x: this.x + transform.offsetX,
+                y: this.y + transform.offsetY,
+                rx: this.radius,
+                ry: this.radius,
+                width: this.width,
+                height: this.height,
+                fill: this.fill
             }
         }));
     }
