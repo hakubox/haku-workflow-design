@@ -12,5 +12,5 @@ export default class Transform {
     /** 旋转角度 */
     rotate: number = 0;
     /** 放大倍率 */
-    scale: number = 0;
+    scale: number = 1;
 }

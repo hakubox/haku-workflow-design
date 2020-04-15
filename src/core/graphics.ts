@@ -45,9 +45,11 @@ export default abstract class Graphics {
             let _parent = this.graphics.parentNode as SVGElement;
             _parent.replaceChild(graphics, this.graphics);
             graphics.setAttribute('gid', this.id);
+            graphics.setAttribute('gtype', this.type);
         }
         this.graphics = graphics;
         graphics.setAttribute('gid', this.id);
+        graphics.setAttribute('gtype', this.type);
         return graphics;
     }
 
@@ -62,6 +64,11 @@ export default abstract class Graphics {
         return this._active;
     }
     set active(val: boolean) {
+        if (val) {
+            this.graphics.setAttribute('filter', 'url(#graphics-light)');
+        } else {
+            this.graphics.removeAttribute('filter');
+        }
         this._active = val;
     }
 
@@ -83,7 +90,7 @@ export default abstract class Graphics {
     abstract render(transform?: Transform): SVGElement;
 
     /** 设置坐标 */
-    abstract setLocation(x: number, y: number, config: Transform): void;
+    abstract setLocation(x: number, y: number, config: Transform): this;
 
     /** 获取图形宽度 */
     abstract getWidth(): number;

@@ -1,3 +1,4 @@
+import { DomAttr, Block } from './interface';
 
 /** 获取参数类型 */
 export function getType(obj: any): string {
@@ -69,20 +70,6 @@ export function recursive<T>(formVariables: Array<T>, callback?: {
     return _list;
 }
 
-/** DOM节点参数 */
-interface DomAttr {
-    /** 父节点 */
-    parent?: HTMLElement | SVGElement;
-    /** class样式 */
-    class?: string | string[];
-    /** css样式 */
-    style?: Record<string, any>;
-    /** 节点属性 */
-    attrs?: Record<string, any>;
-    /** 节点事件 */
-    events?: Record<string, (target: EventTarget) => void>;
-}
-
 function mergeAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: Element[] = []) {
     attrs.style && Object.entries(attrs.style).forEach(([key, value]) => {
         dom.style[key] = value;
@@ -117,4 +104,22 @@ export function createElement(nodeName: string, attrs: DomAttr = {}, ...children
     const _el = document.createElement(nodeName);
     mergeAttrs(_el, attrs, children);
     return _el;
+}
+
+/** 方块碰撞检测 */
+export function intersects(rectA: Block, rectB: Block): boolean {
+    return !(rectA.x + rectA.width < rectB.x ||
+        rectB.x + rectB.width < rectA.x ||
+        rectA.y + rectA.height < rectB.y ||
+        rectB.y + rectB.height < rectA.y);
+}
+
+/** 调整为标准坐标 */
+export function setStandardCoordinate(coordinate: Block) {
+    throw new Error('未完成');
+    let _x = coordinate.x < 0 ? coordinate.x - coordinate.width : coordinate.x;
+    let _y = coordinate.y < 0 ? coordinate.y - coordinate.height : coordinate.y;
+    return {
+        x: _x, y: _y, width: Math.abs(coordinate.width), height: Math.abs(coordinate.height)
+    }
 }

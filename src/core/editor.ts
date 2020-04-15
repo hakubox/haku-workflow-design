@@ -1,27 +1,9 @@
-import { getType, createElement, createSVGElement, recursive } from '@/tools';
+import { getType, createElement, createSVGElement, recursive, intersects, setStandardCoordinate } from '@/tools';
 import Graphics from './graphics';
-import { debug } from 'webpack';
 import Transform from './transform';
-import Line from '@/graphics/beeline';
-import LineGraphics from '../graphics/line';
 import Beeline from '@/graphics/beeline';
-import { MoveBlock, MoveBlockParmas } from '../graphics/moveblock';
-
-/** 拖拽配置 */
-interface DragConfig {
-    /** 是否开始拖拽 */
-    isDrag: boolean;
-    /** 拖拽对象 */
-    graphics: Graphics[];
-    /** 拖拽点横坐标 */
-    x1: number;
-    /** 拖拽点纵坐标 */
-    y1: number;
-    /** 终止点横坐标 */
-    x2: number;
-    /** 终止点纵坐标 */
-    y2: number;
-}
+import { Selector, MoveBlock } from '@/graphics';
+import { DragConfig, SelectorConfig, WillScroll } from '@/interface';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -130,7 +112,7 @@ export default class Editor {
     /**
      * 画布上的辅助图形列表
      */
-    graphicsGuideMap: LineGraphics[] = [];
+    graphicsGuideMap: Graphics[] = [];
     /** 坐标转换 */
     transform: Transform;
 
@@ -182,6 +164,19 @@ export default class Editor {
         this.canvasElement.scrollLeft = left;
     }
 
+    /** 所有选中元素 */
+    get selectedGraphics() {
+        return this.graphicsMap.filter(i => i.active);
+    }
+    set selectedGraphics(val: Graphics[]) {
+        this.graphicsMap = val;
+
+        const _ids = val.map(i => i.id);
+        this.graphicsMap.forEach(i => {
+            i.active = _ids.includes(i.id);
+        });
+    }
+
     /** 图形区域 */
     regionRect = {
         /** 图形区域离顶部距离 */
@@ -200,12 +195,44 @@ export default class Editor {
 
     /** 拖拽配置项 */
     dragConfig: DragConfig = {
-        isDrag: false,
-        graphics: [],
+        isStart: false,
+        graphicsLocations: [],
         x1: 0,
         y1: 0,
         x2: 0,
-        y2: 0
+        y2: 0,
+        get minx(this: DragConfig) {
+            let _x = 99999;
+            this.graphicsLocations.forEach(i => {
+                _x = i.x < _x ? i.x : _x; 
+            });
+            return _x;
+        },
+        get miny(this: DragConfig) {
+            let _y = 99999;
+            this.graphicsLocations.forEach(i => {
+                _y = i.y < _y ? i.y : _y; 
+            });
+            return _y;
+        },
+        reset(this: DragConfig) {
+            this.isStart = false;
+            this.x1 = this.x2 = this.y1 = this.y2 = 0;
+            this.graphicsLocations = [];
+        }
+    };
+
+    /** 框选配置项 */
+    selectorConfig: SelectorConfig = {
+        isStart: false,
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 0,
+        reset(this: SelectorConfig) {
+            this.isStart = false;
+            this.x1 = this.y1 = this.x2 = this.y2 = 0;
+        }
     };
 
     /** 根据浏览器视窗高宽度自动计算画布宽高度 */
@@ -226,6 +253,19 @@ export default class Editor {
         let _locX = (this.canvasWidth) % 40;
         let _locY = (this.canvasHeight) % 40;
         this.svgElement.style.backgroundPosition = `${_locX}px ${_locY}px`;
+    }
+
+    /** 卷轴滚动标记 */
+    private willScroll: WillScroll = {
+        isStart: false, speed: 0, offsetX: 0, offsetY: 0, speedRate: 0.04,
+        topRoll: false, topStep: 0, leftRoll: false, leftStep: 0,  bottomRoll: false,  bottomStep: 0, rightRoll: false, rightStep: 0,
+        get willStart(this: WillScroll) {
+            return this.topRoll || this.rightRoll || this.bottomRoll || this.leftRoll;
+        },
+        reset(this: WillScroll) {
+            this.topRoll = this.rightRoll = this.bottomRoll = this.leftRoll = false;
+            this.offsetX = this.offsetY = this.topStep = this.rightStep = this.bottomStep = this.leftStep = 0;
+        }
     }
 
     /** 重新计算真实图形区域宽高度 */
@@ -297,23 +337,102 @@ export default class Editor {
         
     }
 
-    /** 清空辅助操作工具 */
-    clearGuideTool() {
-        this.graphicsGuideMap.forEach(i => {
-            i.type === 'move-block' && i.destroy();
-        });
+    /** 清空框选工具 */
+    clearSelectorTool() {
+        this.graphicsGuideMap.forEach(i => i.type === GraphicsType.selector && i.destroy());
+        this.graphicsGuideMap = this.graphicsGuideMap.filter(i => i.type !== GraphicsType.selector);
+    }
+
+    /** 清空移动调节工具 */
+    clearMoveblockTool() {
+        this.graphicsGuideMap.forEach(i => i.type === GraphicsType.moveblock && i.destroy());
         this.graphicsGuideMap = this.graphicsGuideMap.filter(i => i.type !== GraphicsType.moveblock);
     }
 
-    /** 添加辅助操作工具 */
-    addGuideTool(graphicsTarget: Graphics) {
-        const _tool = new MoveBlock({
-            graphicsTarget,
-            x: graphicsTarget.x,
-            y: graphicsTarget.y
+    /** 设置辅助操作工具 */
+    setMoveblock(...graphicsTarget: Graphics[]) {
+        if (!graphicsTarget.length) return;
+        this.clearMoveblockTool();
+        let _x1: number = 99999;
+        let _y1: number = 99999;
+        let _x2: number = -99999;
+        let _y2: number = -99999;
+
+        graphicsTarget.forEach(i => {
+            _x1 = i.x < _x1 ? i.x : _x1;
+            _y1 = i.y < _y1 ? i.y : _y1;
+            _x2 = i.x + i.getWidth() > _x2 ? i.x + i.getWidth() : _x2;
+            _y2 = i.y + i.getHeight() > _y2 ? i.y + i.getHeight() : _y2;
         });
-        this.svgElement.appendChild(_tool.render(this.transform));
-        this.graphicsGuideMap.push(_tool);
+
+        const _moveblock = new MoveBlock({
+            x: _x1,
+            y: _y1,
+            width: _x2 - _x1,
+            height: _y2 - _y1,
+            isMove: true
+        });
+        this.svgElement.appendChild(_moveblock.render(this.transform));
+        this.graphicsGuideMap.push(_moveblock);
+    }
+
+    /** 获取选择器 */
+    getSelector() {
+        return this.graphicsGuideMap.find(i => i.type === GraphicsType.selector) as Selector;
+    }
+
+    /** 获取图形编辑器 */
+    getMoveBlock() {
+        return this.graphicsGuideMap.find(i => i.type === GraphicsType.moveblock) as MoveBlock;
+    }
+
+    /** 新增框选区域 */
+    addSelector(x: number, y: number) {
+        const _selector = new Selector({
+            x, y, width: 0, height: 0
+        });
+        this.svgElement.appendChild(_selector.render(this.transform));
+        this.graphicsGuideMap.push(_selector);
+    }
+
+    /** 范围选择 */
+    areaSelect(width: number, height: number) {
+        const _selector = this.getSelector();
+        if (!_selector) return;
+
+        _selector?.setArea(width, height, this.transform);
+
+        let _x = width < 0 ? _selector.x + width : _selector.x;
+        let _y = height < 0 ? _selector.y + height : _selector.y;
+
+        this.graphicsMap.forEach(i => {
+            let isIntersects = intersects(
+                { x: _x, y: _y, width: Math.abs(width), height: Math.abs(height) }, 
+                { x: i.x, y: i.y, width: i.getWidth(), height: i.getHeight() }
+            );
+            i.active = isIntersects;
+            
+            let _index = this.dragConfig.graphicsLocations.findIndex(o => i.id === o.id);
+            if (isIntersects && _index <= -1) {
+                this.dragConfig.graphicsLocations.push({ id: i.id, x: i.x, y: i.y });
+            } else if (!isIntersects && _index >= 0) {
+                this.dragConfig.graphicsLocations.splice(_index, 1);
+            }
+            
+        });
+    }
+
+    /** 批量设置图形坐标（传入相对坐标） */
+    setGraphicsLocation(x1: number, y1: number, x2: number, y2: number, ...graphics: Graphics[]) {
+        graphics.forEach(i => {
+            let _idLocation = this.dragConfig.graphicsLocations.find(o => o.id === i.id);
+            i.setLocation(_idLocation.x + x2 - x1, _idLocation.y + y2 - y1, this.transform);
+        });
+    }
+
+    /** 清空所有选中图形 */
+    clearAllSelect() {
+        this.graphicsMap.forEach(i => i.active = false);
     }
 
     /** 重绘所有子节点 */
@@ -341,55 +460,134 @@ export default class Editor {
         });
 
         this.canvasElement.addEventListener('scroll', e => {
-            if (!this.dragConfig.isDrag) {
-            }
         });
 
         this.svgElement.addEventListener('mousedown', e => {
             let _gid = (e.target as Element).getAttribute('gid');
-            this.clearGuideTool();
+            this.clearSelectorTool();
 
             if (_gid) {
-                this.dragConfig.graphics = this.graphicsMap.filter(i => i.id === _gid);
-                /** 之后需要调整为获取最左上角的组件，并获取整体宽高 */
-                let _topGraphics = this.dragConfig.graphics[0];
-                this.dragConfig.isDrag = true;
-                this.dragConfig.x1 = e.offsetX - this.transform.offsetX - _topGraphics.x;
-                this.dragConfig.y1 = e.offsetY - this.transform.offsetY - _topGraphics.y;
-
-                this.addGuideTool(_topGraphics);
+                let _topGraphics = this.graphicsMap.find(i => i.id === _gid);
+                if (!this.dragConfig.graphicsLocations.find(i => i.id === _gid)) {
+                    this.graphicsMap.forEach(i => i.active = false);
+                    this.dragConfig.graphicsLocations = [{ id: _gid, x: _topGraphics.x, y: _topGraphics.y }];
+                    _topGraphics.active = true;
+                    this.setMoveblock(_topGraphics);
+                }
+                this.dragConfig.x1 = e.offsetX - this.transform.offsetX;
+                this.dragConfig.y1 = e.offsetY - this.transform.offsetY;
+                this.dragConfig.isStart = true;
+            } else {
+                this.clearMoveblockTool();
+                this.clearAllSelect();
+                this.selectorConfig.x1 = e.offsetX - this.transform.offsetX;
+                this.selectorConfig.y1 = e.offsetY - this.transform.offsetY;
+                this.selectorConfig.isStart = true;
+                this.addSelector(
+                    e.offsetX - this.transform.offsetX,
+                    e.offsetY - this.transform.offsetY
+                );
             }
+            
+        });
+
+        this.canvasElement.addEventListener('mouseleave', e => {
+            // this.willScroll.reset();
         });
 
         this.svgElement.addEventListener('mousemove', e => {
-            if (this.dragConfig.isDrag) {
-                this.dragConfig.graphics.forEach(i => {
-                    this.graphicsGuideMap.filter(i => i.type === GraphicsType.moveblock).forEach(i => i.setLocation(
-                        e.offsetX - this.transform.offsetX - this.dragConfig.x1, 
-                        e.offsetY - this.transform.offsetY - this.dragConfig.y1, 
-                        this.transform
-                    ));
-                });
+            if (this.dragConfig.isStart) {
+                this.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock)?.setLocation?.(
+                    e.offsetX - this.transform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
+                    e.offsetY - this.transform.offsetY - this.dragConfig.y1 + this.dragConfig.miny, 
+                    this.transform
+                );
+                this.setGraphicsLocation(
+                    this.dragConfig.x1,
+                    this.dragConfig.y1,
+                    e.offsetX - this.transform.offsetX, 
+                    e.offsetY - this.transform.offsetY,
+                    ...this.graphicsMap.filter(i => i.active)
+                );
+            }
+            if (this.selectorConfig.isStart) {
+                const _edgeRight = this.locationLeft + this.canvasWidth - 100;
+                const _edgeBottom = this.locationTop + this.canvasHeight - 100;
+                const _edgeLeft = this.locationLeft + 100;
+                const _edgeTop = this.locationTop + 100;
+                
+                // 记录卷动位置及速率
+                this.willScroll.offsetX = e.offsetX;
+                this.willScroll.offsetY = e.offsetY;
+                this.willScroll.rightRoll = this.willScroll.offsetX > _edgeRight;
+                this.willScroll.bottomRoll = this.willScroll.offsetY > _edgeBottom;
+                this.willScroll.leftRoll = this.willScroll.offsetX < _edgeLeft;
+                this.willScroll.topRoll = this.willScroll.offsetY < _edgeTop;
+                this.willScroll.topStep = this.willScroll.topRoll ? Math.ceil((this.willScroll.offsetY - _edgeTop) || 0) : 0;
+                this.willScroll.leftStep = this.willScroll.leftRoll ? Math.ceil((this.willScroll.offsetX - _edgeLeft) || 0) : 0;
+                this.willScroll.bottomStep = this.willScroll.bottomRoll ? Math.ceil((this.willScroll.offsetY - _edgeBottom) || 0) : 0;
+                this.willScroll.rightStep = this.willScroll.rightRoll ? Math.ceil((this.willScroll.offsetX - _edgeRight) || 0) : 0;
+
+                // 到达边缘时自动卷动滚动条
+                const _cb = () => {
+                    const _timer = setTimeout(() => {
+                        const _edgeRight = this.locationLeft + this.canvasWidth - 100;
+                        const _edgeBottom = this.locationTop + this.canvasHeight - 100;
+                        const _edgeLeft = this.locationLeft + 100;
+                        const _edgeTop = this.locationTop + 100;
+                        let _x = 0;
+                        let _y = 0;
+
+                        if (this.willScroll.offsetX > _edgeRight) {
+                            _x += Math.ceil(this.willScroll.rightStep * this.willScroll.speedRate);
+                        } else if (this.willScroll.offsetX < _edgeLeft) {
+                            _x += Math.floor(this.willScroll.leftStep * this.willScroll.speedRate);
+                        }
+                        if (this.willScroll.offsetY > _edgeBottom) {
+                            _y += Math.ceil(this.willScroll.bottomStep * this.willScroll.speedRate);
+                        } else if (this.willScroll.offsetY < _edgeTop) {
+                            _y += Math.floor(this.willScroll.topStep * this.willScroll.speedRate);
+                        }
+
+                        this.willScroll.offsetX += _x;
+                        this.locationLeft += _x;
+                        this.willScroll.offsetY += _y;
+                        this.locationTop += _y;
+                        this.areaSelect(
+                            this.willScroll.offsetX - this.transform.offsetX - this.selectorConfig.x1,
+                            this.willScroll.offsetY - this.transform.offsetY - this.selectorConfig.y1
+                        );
+                        
+                        this.willScroll.willStart ? _cb() : clearTimeout(_timer);
+                    }, 16);
+                };
+                // 单例执行
+                this.willScroll.isStart === false && _cb();
+                this.willScroll.isStart = this.willScroll.willStart;
+
+                this.areaSelect(
+                    this.willScroll.offsetX - this.transform.offsetX - this.selectorConfig.x1,
+                    this.willScroll.offsetY - this.transform.offsetY - this.selectorConfig.y1
+                );
             }
         });
 
         document.body.addEventListener('mouseup', e => {
-            this.dragConfig.isDrag = false;
+            this.clearSelectorTool();
 
-            if (this.dragConfig.x1 && this.dragConfig.y1) {
+            if (this.dragConfig.isStart) {
                 this.reSizeComputed();
                 this.autoFit();
-                this.refresh();
+                // this.refresh();
+                this.dragConfig.reset();
             }
 
-            this.dragConfig.x2 = e.offsetX;
-            this.dragConfig.y2 = e.offsetY;
-
-            this.dragConfig.graphics = [];
-            this.dragConfig.x1 = 0;
-            this.dragConfig.y1 = 0;
-            this.dragConfig.x2 = 0;
-            this.dragConfig.y2 = 0;
+            if (this.selectorConfig.isStart) {
+                this.setMoveblock(...this.graphicsMap.filter(i => i.active));
+                this.selectorConfig.reset();
+            }
+            
+            this.willScroll.reset();
         });
 
         this.autoFit();

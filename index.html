@@ -7,5 +7,12 @@
     <script src="vendor.dll.js"></script>
 </head>
 <body>
+    <svg>
+        <filter id="graphics-light" x="-110%" y="-110%" width="400%" height="400%">
+            <feOffset result="offOut" in="SourceGraphic" dx="0" dy="0"></feOffset>
+            <feGaussianBlur result="blurOut" in="offOut" stdDeviation="6"></feGaussianBlur>
+            <feBlend in="SourceGraphic" in2="blurOut" mode="normal"></feBlend>
+        </filter>
+    </svg>
 </body>
 </html>

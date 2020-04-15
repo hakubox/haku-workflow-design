@@ -4,7 +4,7 @@ import Transform from '@/core/transform';
 
 export class RectParams extends BlockGraphicsParams {
     /** 圆角半径 */
-    radius: number;
+    radius?: number = 0;
     /** 宽度 */
     width: number;
     /** 高度 */
@@ -39,11 +39,34 @@ export default class Rect extends BlockGraphics {
         return this.height;
     }
     
-    setLocation(x: number, y: number, transform: Transform): void {
+    setLocation(x: number, y: number, transform: Transform) {
         this.x = x;
         this.y = y;
         this.graphics.setAttribute('x', x + transform.offsetX + '');
         this.graphics.setAttribute('y', y + transform.offsetY + '');
+        return this;
+    }
+
+    /** 设置范围 */
+    setArea(width: number, height: number, transform: Transform) {
+        this.width = width;
+        this.height = height;
+
+        if (!this.graphics) return;
+
+        if (width < 0) {
+            const _x = this.x + transform.offsetX + width;
+            this.graphics.setAttribute('x', _x + '');
+        }
+        
+        if (height < 0) {
+            const _y = this.y + transform.offsetY + height;
+            this.graphics.setAttribute('y', _y + '');
+        }
+
+        this.graphics.setAttribute('width', Math.abs(this.width) * transform.scale + '');
+        this.graphics.setAttribute('height', Math.abs(this.height) * transform.scale + '');
+        return this;
     }
 
     render(transform: Transform = new Transform()) {

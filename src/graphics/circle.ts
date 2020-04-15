@@ -29,11 +29,12 @@ export default class Circle extends BlockGraphics {
         return this.radius * 2;
     }
     
-    setLocation(x: number, y: number, transform: Transform): void {
+    setLocation(x: number, y: number, transform: Transform) {
         this.x = x;
         this.y = y;
         this.graphics.setAttribute('cx', x + this.radius + transform.offsetX + '');
         this.graphics.setAttribute('cy', y + this.radius + transform.offsetY + '');
+        return this;
     }
 
     render(transform: Transform = new Transform()) {

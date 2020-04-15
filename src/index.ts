@@ -2,6 +2,7 @@ import { Editor } from '@/core';
 import "./assets/basic.scss";
 import { Rect } from './graphics';
 import './enum';
+import './interface';
 
 console.time('editor-init');
 

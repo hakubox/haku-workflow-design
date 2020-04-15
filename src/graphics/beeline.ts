@@ -45,8 +45,8 @@ export default class Beeline extends Line {
         return Math.abs(this.y2 - this.y);
     }
     
-    setLocation(x: number, y: number, config: Transform): void {
-        
+    setLocation(x: number, y: number, config: Transform) {
+        return this;
     }
 
     render(transform: Transform = new Transform()) {

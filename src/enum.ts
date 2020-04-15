@@ -6,9 +6,11 @@ declare const enum GraphicsType {
     circle = 'circle',
     /** 直线 */
     beeline = 'beeline',
+    /** 区域 */
+    marquee = 'marquee',
 
     /** 移动调节工具 */
     moveblock = 'move-block',
     /** 选择框 */
-    marquee = 'marquee'
+    selector = 'selector'
 }
