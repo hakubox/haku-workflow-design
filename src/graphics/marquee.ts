@@ -1,5 +1,5 @@
 import { createSVGElement } from '@/tools';
-import Transform from '@/core/transform';
+import Transform, { globalTransform } from '@/core/transform';
 import { RectParams, Rect } from '.';
 
 export class MarqueeParmas extends RectParams {
@@ -14,11 +14,11 @@ export default class Marquee extends Rect {
     type = GraphicsType.marquee;
     description = '区域框';
 
-    render(transform: Transform = new Transform()) {
+    render() {
         return this._render(createSVGElement('rect', {
             attrs: {
-                x: this.x + transform.offsetX,
-                y: this.y + transform.offsetY,
+                x: this.x + globalTransform.offsetX,
+                y: this.y + globalTransform.offsetY,
                 width: this.width,
                 height: this.height,
                 fill: '#1890FF55',

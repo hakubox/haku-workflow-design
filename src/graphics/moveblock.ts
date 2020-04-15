@@ -1,46 +1,54 @@
 import { createSVGElement } from '@/tools';
-import Transform from '@/core/transform';
+import Transform, { globalTransform } from '@/core/transform';
 import { Rect, RectParams } from '.';
 
 export class MoveBlockParmas extends RectParams {
-    /** 是否为移动状态 */
-    isMove: boolean;
 }
 
 /** 选中时的图形操作工具 */
 export default class MoveBlock extends Rect {
     constructor(config: MoveBlockParmas) {
         super(config);
-
-        this.isMove = config.isMove;
     }
 
     type = GraphicsType.moveblock;
     description = '图形操作框';
     
     private _isMove: boolean = false;
-    /** 虚线框 */
-    dottedBlock: SVGElement;
     /** 拖拽标记(9个) */
     dragmarks: SVGElement[] = [];
     /** 拉线标记(5个) */
     linemarks: SVGElement[] = [];
     /** 连接标记(5个) */
     linkmarks: SVGElement[] = [];
+    /** 拖拽小方块的大小 */
+    readonly badgeWidth: number = 9;
+    /** 拖拽小方块颜色 */
+    readonly badgeColor: string = '#52C41A';
+    
 
     /** 是否为移动状态 */
     get isMove() { return this._isMove; }
     set isMove(val: boolean) {
-        this._isMove = val;
+        if (val !== this._isMove) {
+            this._isMove = val;
+            this.dragmarks.forEach(i => i.style.display = val ? 'none' : 'block');
+        }
+    }
+    /** 计算边距 */
+    get badgePadding(): number {
+        return Math.floor(this.badgeWidth / 2) + 1;
     }
 
+    /** 拖拽小方块边距 */
 
-    setLocation(x: number, y: number, transform: Transform) {
+
+    setLocation(x: number, y: number) {
         this.x = x;
         this.y = y;
         // this.graphicsTarget.forEach(i => i.setLocation(x, y, transform));
-        this.dottedBlock.setAttribute('x', x + transform.offsetX + '');
-        this.dottedBlock.setAttribute('y', y + transform.offsetY + '');
+        this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
+        this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
         
         const _dragmarkLocs = [
             [this.x, this.y],
@@ -53,8 +61,8 @@ export default class MoveBlock extends Rect {
             [this.x + this.width, this.y + this.height],
         ];
         this.dragmarks.forEach((i ,index) => {
-            i.setAttribute('x', _dragmarkLocs[index][0] + transform.offsetX - 5 + '');
-            i.setAttribute('y', _dragmarkLocs[index][1] + transform.offsetY - 5 + '');
+            i.setAttribute('x', _dragmarkLocs[index][0] + globalTransform.offsetX - 5 + '');
+            i.setAttribute('y', _dragmarkLocs[index][1] + globalTransform.offsetY - 5 + '');
         });
         return this;
     }
@@ -66,16 +74,7 @@ export default class MoveBlock extends Rect {
         return this.height;
     }
 
-    /** 拖拽小方块的大小 */
-    readonly badgeWidth: number = 9;
-    /** 拖拽小方块颜色 */
-    readonly badgeColor: string = '#52C41A';
-    /** 拖拽小方块边距 */
-    get badgePadding(): number {
-        return Math.floor(this.badgeWidth / 2) + 1;
-    }
-
-    render(transform: Transform = new Transform()) {
+    render() {
         const _dragMarkAttrs = {
             width: this.badgeWidth,
             height: this.badgeWidth,
@@ -92,57 +91,57 @@ export default class MoveBlock extends Rect {
         this.dragmarks = [
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + transform.offsetX - this.badgePadding,
-                    y: this.y + transform.offsetY - this.badgePadding,
+                    x: this.x + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + this.width / 2 + transform.offsetX - this.badgePadding,
-                    y: this.y + transform.offsetY - this.badgePadding,
+                    x: this.x + this.width / 2 + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + this.width + transform.offsetX - this.badgePadding,
-                    y: this.y + transform.offsetY - this.badgePadding,
+                    x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + this.width + transform.offsetX - this.badgePadding,
-                    y: this.y + this.height / 2 + transform.offsetY - this.badgePadding,
+                    x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + this.height / 2 + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + this.width + transform.offsetX - this.badgePadding,
-                    y: this.y + this.height + transform.offsetY - this.badgePadding,
+                    x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + this.width / 2 + transform.offsetX - this.badgePadding,
-                    y: this.y + this.height + transform.offsetY - this.badgePadding,
+                    x: this.x + this.width / 2 + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + transform.offsetX - this.badgePadding,
-                    y: this.y + this.height / 2 + transform.offsetY - this.badgePadding,
+                    x: this.x + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + this.height / 2 + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
             createSVGElement('rect', {
                 attrs: {
-                    x: this.x + transform.offsetX - this.badgePadding,
-                    y: this.y + this.height + transform.offsetY - this.badgePadding,
+                    x: this.x + globalTransform.offsetX - this.badgePadding,
+                    y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
                 }, style: _dragMarkStyles,
             }),
@@ -151,10 +150,10 @@ export default class MoveBlock extends Rect {
         let _group = createSVGElement('g', {
             attrs: {
             }
-        }, this.dottedBlock = createSVGElement('rect', {
+        }, this.contentGraphics = createSVGElement('rect', {
                 attrs: {
-                    x: this.x + transform.offsetX,
-                    y: this.y + transform.offsetY,
+                    x: this.x + globalTransform.offsetX,
+                    y: this.y + globalTransform.offsetY,
                     width: this.width,
                     height: this.height,
                     fill: 'none',

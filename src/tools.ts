@@ -70,7 +70,10 @@ export function recursive<T>(formVariables: Array<T>, callback?: {
     return _list;
 }
 
-function mergeAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: Element[] = []) {
+function mergeDomAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: Element[] = []) {
+    if (attrs.text) {
+        dom.innerHTML = attrs.text;
+    }
     attrs.style && Object.entries(attrs.style).forEach(([key, value]) => {
         dom.style[key] = value;
     });
@@ -92,7 +95,7 @@ export function createSVGElement(nodeName: string, attrs: DomAttr = {}, ...child
         attrs.parent = document.body;
     }
     let _el = document.createElementNS('http://www.w3.org/2000/svg', nodeName);
-    mergeAttrs(_el, attrs, children);
+    mergeDomAttrs(_el, attrs, children);
     return _el;
 }
 
@@ -102,7 +105,7 @@ export function createElement(nodeName: string, attrs: DomAttr = {}, ...children
         attrs.parent = document.body;
     }
     const _el = document.createElement(nodeName);
-    mergeAttrs(_el, attrs, children);
+    mergeDomAttrs(_el, attrs, children);
     return _el;
 }
 
@@ -122,4 +125,11 @@ export function setStandardCoordinate(coordinate: Block) {
     return {
         x: _x, y: _y, width: Math.abs(coordinate.width), height: Math.abs(coordinate.height)
     }
+}
+
+/** 合并属性（单层） */
+export function mergeProps(objA: Record<string, any>, objB: Record<string, any>) {
+    Object.entries(objB).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) objA[key] = value;
+    });
 }

@@ -7,6 +7,10 @@ html, body {
     margin: 0px;
 }
 
+.display-none {
+    display: none !important;
+}
+
 // 流程设计器
 .haku-workflow-design {
     position: absolute;
@@ -89,6 +93,16 @@ html, body {
             }
         }
     }
-    
-    
+}
+
+svg {
+    user-select: none;
+
+    text.graphics-label {
+        user-select: none;
+        pointer-events: none;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        font-size: 12px;
+    }
 }

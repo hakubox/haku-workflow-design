@@ -1,4 +1,4 @@
-import Graphics from "./core/graphics";
+import Graphics from "./graphics/graphics";
 
 /** 拖拽配置 */
 export interface DragConfig {
@@ -91,6 +91,8 @@ export interface IdLocation extends Location {
 
 /** DOM节点参数 */
 export interface DomAttr {
+    /** 节点文本内容 */
+    text?: string;
     /** 父节点 */
     parent?: HTMLElement | SVGElement;
     /** class样式 */
@@ -101,4 +103,10 @@ export interface DomAttr {
     attrs?: Record<string, any>;
     /** 节点事件 */
     events?: Record<string, (target: EventTarget) => void>;
+}
+
+/** SVG text 属性 */
+export interface TextAttrs extends Location {
+    fill: string;
+    class: string;
 }

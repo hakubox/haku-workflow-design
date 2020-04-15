@@ -11,19 +11,21 @@ window['editor'] = new Editor({
         this.addGraphics(
             ...[
                 [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800],
-                [-800, 0], [-600, 0], [-400, 0], [-200, 0], [0, 0], [200, 0], [400, 0], [600, 0], [800, 0],
+                [-800, 0], [-600, 0], [-400, 0], [-200, 0], [200, 0], [400, 0], [600, 0], [800, 0],
                 // [0, 0]
             ].map(i => new Rect({
+                text: i.toString(),
                 radius: 8,
                 x: i[0],
                 y: i[1],
                 width: 100,
                 height: 100,
-                fill: '#1890FF'
+                fill: '#ABDDF3',
+                stroke: '#888888'
             }))
         );
-        this.addGuideLine(true, 0);
-        this.addGuideLine(false, 0);
+        this.addGuideLine(Direction.Horizontal, 0);
+        this.addGuideLine(Direction.Vertical, 0);
         setTimeout(() => {
             callback();
         }, 10);

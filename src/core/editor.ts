@@ -1,9 +1,10 @@
 import { getType, createElement, createSVGElement, recursive, intersects, setStandardCoordinate } from '@/tools';
-import Graphics from './graphics';
-import Transform from './transform';
+import Graphics from '../graphics/graphics';
+import Transform, { globalTransform } from './transform';
 import Beeline from '@/graphics/beeline';
 import { Selector, MoveBlock } from '@/graphics';
 import { DragConfig, SelectorConfig, WillScroll } from '@/interface';
+import GuideLine from '@/graphics/guideline';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -23,8 +24,6 @@ class EditorParams {
  */
 export default class Editor {
     constructor(config: EditorParams = {}) {
-
-        this.transform = new Transform();
 
         if (!config.el) {
             config.parent = document.body;
@@ -113,8 +112,6 @@ export default class Editor {
      * 画布上的辅助图形列表
      */
     graphicsGuideMap: Graphics[] = [];
-    /** 坐标转换 */
-    transform: Transform;
 
     /** 横向页数量 */
     get pageXCount() {
@@ -218,7 +215,6 @@ export default class Editor {
         reset(this: DragConfig) {
             this.isStart = false;
             this.x1 = this.x2 = this.y1 = this.y2 = 0;
-            this.graphicsLocations = [];
         }
     };
 
@@ -257,7 +253,7 @@ export default class Editor {
 
     /** 卷轴滚动标记 */
     private willScroll: WillScroll = {
-        isStart: false, speed: 0, offsetX: 0, offsetY: 0, speedRate: 0.04,
+        isStart: false, speed: 0, offsetX: 0, offsetY: 0, speedRate: 0.05,
         topRoll: false, topStep: 0, leftRoll: false, leftStep: 0,  bottomRoll: false,  bottomStep: 0, rightRoll: false, rightStep: 0,
         get willStart(this: WillScroll) {
             return this.topRoll || this.rightRoll || this.bottomRoll || this.leftRoll;
@@ -276,59 +272,55 @@ export default class Editor {
         this.regionRect.left = this.canvasWidth - _rect.x;
         this.regionRect.top = this.canvasHeight - _rect.y;
 
-        if (_rect.x < this.canvasWidth - 100) {
-            this.transform.offsetX += 400;
-            this.locationLeft += 400;
-        } else if (_rect.x + 60 > this.svgWidth + 100) {
-            this.transform.offsetX -= 400;
-            this.locationLeft -= 400;
-        }
-        if (_rect.x + _rect.width > this.svgWidth - this.canvasWidth + 100) {
-            this.transform.offsetX -= 400;
-            this.locationLeft -= 400;
-        } else if (_rect.x + this.regionRect.width + 60 < this.svgWidth - this.canvasWidth - 100) {
-            this.transform.offsetX += 400;
-            this.locationLeft += 400;
-        }
+        // if (_rect.x < this.canvasWidth - 100) {
+        //     globalTransform.offsetX += 400;
+        //     this.locationLeft += 400;
+        // } else if (_rect.x + 60 > this.svgWidth + 100) {
+        //     globalTransform.offsetX -= 400;
+        //     this.locationLeft -= 400;
+        // }
+        // if (_rect.x + _rect.width > this.svgWidth - this.canvasWidth + 100) {
+        //     globalTransform.offsetX -= 400;
+        //     this.locationLeft -= 400;
+        // } else if (_rect.x + this.regionRect.width + 60 < this.svgWidth - this.canvasWidth - 100) {
+        //     globalTransform.offsetX += 400;
+        //     this.locationLeft += 400;
+        // }
 
-        if (_rect.y < this.canvasHeight - 100) {
-            this.transform.offsetY += 400;
-            this.locationTop += 400;
-        } else if (_rect.y > this.canvasHeight * 2 + 100) {
-            this.transform.offsetY -= 400;
-            this.locationTop -= 400;
-        }
-        if (_rect.y + _rect.height > this.svgHeight - this.canvasHeight + 100) {
-            this.transform.offsetY -= 400;
-            this.locationTop -= 400;
-        } else if (_rect.y + this.regionRect.height + 60 < this.svgHeight - this.canvasHeight - 100) {
-            this.transform.offsetY += 400;
-            this.locationTop += 400;
-        }
-        
+        // if (_rect.y < this.canvasHeight - 100) {
+        //     globalTransform.offsetY += 400;
+        //     this.locationTop += 400;
+        // } else if (_rect.y > this.canvasHeight * 2 + 100) {
+        //     globalTransform.offsetY -= 400;
+        //     this.locationTop -= 400;
+        // }
+        // if (_rect.y + _rect.height > this.svgHeight - this.canvasHeight + 100) {
+        //     globalTransform.offsetY -= 400;
+        //     this.locationTop -= 400;
+        // } else if (_rect.y + this.regionRect.height + 60 < this.svgHeight - this.canvasHeight - 100) {
+        //     globalTransform.offsetY += 400;
+        //     this.locationTop += 400;
+        // }
     }
 
     /** 添加图形 */
     addGraphics(...graphics: Graphics[]) {
         for (let i = 0; i < graphics.length; i++) {
             this.graphicsMap.push(graphics[i]);
-            this.svgGroupElement.appendChild(graphics[i].render(this.transform));
+            this.svgGroupElement.appendChild(graphics[i].render());
         }
         this.reSizeComputed();
         this.autoAdjustBackground();
     }
 
-    /** 添加辅助线 */
-    addGuideLine(isVertical: boolean, loc: number) {
-        const _line = new Beeline({
-            x: isVertical ? loc : -9999,
-            y: isVertical ? -9999 : loc,
-            x2: isVertical ? loc : 9999,
-            y2: isVertical ? 9999 : loc,
+    /** 添加参考线 */
+    addGuideLine(direction: Direction, loc: number) {
+        const _line = new GuideLine({
             stroke: 'green',
-            width: 1
+            location: loc,
+            direction: direction
         });
-        this.svgElement.appendChild(_line.render(this.transform));
+        this.svgElement.appendChild(_line.render());
         this.graphicsGuideMap.push(_line);
     }
 
@@ -350,13 +342,13 @@ export default class Editor {
     }
 
     /** 设置辅助操作工具 */
-    setMoveblock(...graphicsTarget: Graphics[]) {
+    setMoveblock(isMove: boolean, ...graphicsTarget: Graphics[]) {
         if (!graphicsTarget.length) return;
         this.clearMoveblockTool();
-        let _x1: number = 99999;
-        let _y1: number = 99999;
-        let _x2: number = -99999;
-        let _y2: number = -99999;
+        let _x1: number = Number.MAX_VALUE;
+        let _y1: number = Number.MAX_VALUE;
+        let _x2: number = -Number.MAX_VALUE;
+        let _y2: number = -Number.MAX_VALUE;
 
         graphicsTarget.forEach(i => {
             _x1 = i.x < _x1 ? i.x : _x1;
@@ -369,10 +361,10 @@ export default class Editor {
             x: _x1,
             y: _y1,
             width: _x2 - _x1,
-            height: _y2 - _y1,
-            isMove: true
+            height: _y2 - _y1
         });
-        this.svgElement.appendChild(_moveblock.render(this.transform));
+        _moveblock.isMove = isMove;
+        this.svgElement.appendChild(_moveblock.render());
         this.graphicsGuideMap.push(_moveblock);
     }
 
@@ -391,7 +383,7 @@ export default class Editor {
         const _selector = new Selector({
             x, y, width: 0, height: 0
         });
-        this.svgElement.appendChild(_selector.render(this.transform));
+        this.svgElement.appendChild(_selector.render());
         this.graphicsGuideMap.push(_selector);
     }
 
@@ -400,7 +392,7 @@ export default class Editor {
         const _selector = this.getSelector();
         if (!_selector) return;
 
-        _selector?.setArea(width, height, this.transform);
+        _selector?.setArea(width, height);
 
         let _x = width < 0 ? _selector.x + width : _selector.x;
         let _y = height < 0 ? _selector.y + height : _selector.y;
@@ -426,7 +418,8 @@ export default class Editor {
     setGraphicsLocation(x1: number, y1: number, x2: number, y2: number, ...graphics: Graphics[]) {
         graphics.forEach(i => {
             let _idLocation = this.dragConfig.graphicsLocations.find(o => o.id === i.id);
-            i.setLocation(_idLocation.x + x2 - x1, _idLocation.y + y2 - y1, this.transform);
+            i.setLocation(_idLocation.x + x2 - x1, _idLocation.y + y2 - y1);
+            i.setText([i.x, i.y].toString());
         });
     }
 
@@ -438,10 +431,20 @@ export default class Editor {
     /** 重绘所有子节点 */
     refresh() {
         this.graphicsMap.forEach(item => {
-            item.graphics = item.render(this.transform);
+            item.graphics = item.render();
         });
         this.graphicsGuideMap.forEach(item => {
-            item.graphics = item.render(this.transform);
+            item.graphics = item.render();
+        });
+    }
+
+    /** 重绘所有子节点 */
+    refreshLocation() {
+        this.graphicsMap.forEach(item => {
+            item.refreshLocation();
+        });
+        this.graphicsGuideMap.forEach(item => {
+            item.type !== GraphicsType.guideline && item.refreshLocation();
         });
     }
 
@@ -456,10 +459,18 @@ export default class Editor {
             this.reSizeComputed();
             this.autoAdjustBackgroundByResize();
             this.autoFit();
-            this.refresh();
+            this.refreshLocation();
         });
 
         this.canvasElement.addEventListener('scroll', e => {
+        });
+
+        this.svgElement.addEventListener('dblclick', e => {
+            let _gid = (e.target as Element).getAttribute('gid');
+            if (_gid) {
+                let _topGraphics = this.graphicsMap.find(i => i.id === _gid);
+                _topGraphics.graphics.setAttribute('fill', 'red');
+            }
         });
 
         this.svgElement.addEventListener('mousedown', e => {
@@ -472,20 +483,23 @@ export default class Editor {
                     this.graphicsMap.forEach(i => i.active = false);
                     this.dragConfig.graphicsLocations = [{ id: _gid, x: _topGraphics.x, y: _topGraphics.y }];
                     _topGraphics.active = true;
-                    this.setMoveblock(_topGraphics);
+                    this.setMoveblock(true, _topGraphics);
+                } else if (this.getMoveBlock()) {
+                    this.getMoveBlock().isMove = true;
                 }
-                this.dragConfig.x1 = e.offsetX - this.transform.offsetX;
-                this.dragConfig.y1 = e.offsetY - this.transform.offsetY;
+                this.dragConfig.x1 = e.offsetX - globalTransform.offsetX;
+                this.dragConfig.y1 = e.offsetY - globalTransform.offsetY;
                 this.dragConfig.isStart = true;
             } else {
+                this.dragConfig.graphicsLocations = [];
                 this.clearMoveblockTool();
                 this.clearAllSelect();
-                this.selectorConfig.x1 = e.offsetX - this.transform.offsetX;
-                this.selectorConfig.y1 = e.offsetY - this.transform.offsetY;
+                this.selectorConfig.x1 = e.offsetX - globalTransform.offsetX;
+                this.selectorConfig.y1 = e.offsetY - globalTransform.offsetY;
                 this.selectorConfig.isStart = true;
                 this.addSelector(
-                    e.offsetX - this.transform.offsetX,
-                    e.offsetY - this.transform.offsetY
+                    e.offsetX - globalTransform.offsetX,
+                    e.offsetY - globalTransform.offsetY
                 );
             }
             
@@ -496,78 +510,98 @@ export default class Editor {
         });
 
         this.svgElement.addEventListener('mousemove', e => {
+
+            const _edgeRight = this.locationLeft + this.canvasWidth - 50;
+            const _edgeBottom = this.locationTop + this.canvasHeight - 50;
+            const _edgeLeft = this.locationLeft + 50;
+            const _edgeTop = this.locationTop + 50;
+            
+            // 记录卷动位置及速率
+            this.willScroll.offsetX = e.offsetX;
+            this.willScroll.offsetY = e.offsetY;
+            this.willScroll.rightRoll = this.willScroll.offsetX > _edgeRight;
+            this.willScroll.bottomRoll = this.willScroll.offsetY > _edgeBottom;
+            this.willScroll.leftRoll = this.willScroll.offsetX < _edgeLeft;
+            this.willScroll.topRoll = this.willScroll.offsetY < _edgeTop;
+            this.willScroll.topStep = this.willScroll.topRoll ? Math.ceil((this.willScroll.offsetY - _edgeTop) || 0) : 0;
+            this.willScroll.leftStep = this.willScroll.leftRoll ? Math.ceil((this.willScroll.offsetX - _edgeLeft) || 0) : 0;
+            this.willScroll.bottomStep = this.willScroll.bottomRoll ? Math.ceil((this.willScroll.offsetY - _edgeBottom) || 0) : 0;
+            this.willScroll.rightStep = this.willScroll.rightRoll ? Math.ceil((this.willScroll.offsetX - _edgeRight) || 0) : 0;
+
+            // 到达边缘时自动卷动滚动条
+            const _cb = (cb) => {
+                const _timer = setTimeout(() => {
+                    const _edgeRight = this.locationLeft + this.canvasWidth - 100;
+                    const _edgeBottom = this.locationTop + this.canvasHeight - 100;
+                    const _edgeLeft = this.locationLeft + 100;
+                    const _edgeTop = this.locationTop + 100;
+                    let _x = 0;
+                    let _y = 0;
+
+                    if (this.willScroll.offsetX > _edgeRight) {
+                        _x += Math.ceil(this.willScroll.rightStep * this.willScroll.speedRate);
+                    } else if (this.willScroll.offsetX < _edgeLeft) {
+                        _x += Math.floor(this.willScroll.leftStep * this.willScroll.speedRate);
+                    }
+                    if (this.willScroll.offsetY > _edgeBottom) {
+                        _y += Math.ceil(this.willScroll.bottomStep * this.willScroll.speedRate);
+                    } else if (this.willScroll.offsetY < _edgeTop) {
+                        _y += Math.floor(this.willScroll.topStep * this.willScroll.speedRate);
+                    }
+
+                    this.willScroll.offsetX += _x;
+                    this.locationLeft += _x;
+                    this.willScroll.offsetY += _y;
+                    this.locationTop += _y;
+                    cb();
+                    
+                    this.willScroll.willStart ? _cb(cb) : clearTimeout(_timer);
+                }, 16);
+            };
+
             if (this.dragConfig.isStart) {
-                this.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock)?.setLocation?.(
-                    e.offsetX - this.transform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
-                    e.offsetY - this.transform.offsetY - this.dragConfig.y1 + this.dragConfig.miny, 
-                    this.transform
+                const _moveBlock = this.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock)
+                _moveBlock.setLocation(
+                    e.offsetX - globalTransform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
+                    e.offsetY - globalTransform.offsetY - this.dragConfig.y1 + this.dragConfig.miny
                 );
                 this.setGraphicsLocation(
                     this.dragConfig.x1,
                     this.dragConfig.y1,
-                    e.offsetX - this.transform.offsetX, 
-                    e.offsetY - this.transform.offsetY,
+                    e.offsetX - globalTransform.offsetX, 
+                    e.offsetY - globalTransform.offsetY,
                     ...this.graphicsMap.filter(i => i.active)
                 );
-            }
-            if (this.selectorConfig.isStart) {
-                const _edgeRight = this.locationLeft + this.canvasWidth - 100;
-                const _edgeBottom = this.locationTop + this.canvasHeight - 100;
-                const _edgeLeft = this.locationLeft + 100;
-                const _edgeTop = this.locationTop + 100;
+
+                this.willScroll.isStart === false && _cb(() => {
+                    _moveBlock.setLocation(
+                        e.offsetX - globalTransform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
+                        e.offsetY - globalTransform.offsetY - this.dragConfig.y1 + this.dragConfig.miny
+                    );
+                    this.setGraphicsLocation(
+                        this.dragConfig.x1,
+                        this.dragConfig.y1,
+                        e.offsetX - globalTransform.offsetX, 
+                        e.offsetY - globalTransform.offsetY,
+                        ...this.graphicsMap.filter(i => i.active)
+                    );
+                });
+                this.willScroll.isStart = this.willScroll.willStart;
+
+            } else if (this.selectorConfig.isStart) {
                 
-                // 记录卷动位置及速率
-                this.willScroll.offsetX = e.offsetX;
-                this.willScroll.offsetY = e.offsetY;
-                this.willScroll.rightRoll = this.willScroll.offsetX > _edgeRight;
-                this.willScroll.bottomRoll = this.willScroll.offsetY > _edgeBottom;
-                this.willScroll.leftRoll = this.willScroll.offsetX < _edgeLeft;
-                this.willScroll.topRoll = this.willScroll.offsetY < _edgeTop;
-                this.willScroll.topStep = this.willScroll.topRoll ? Math.ceil((this.willScroll.offsetY - _edgeTop) || 0) : 0;
-                this.willScroll.leftStep = this.willScroll.leftRoll ? Math.ceil((this.willScroll.offsetX - _edgeLeft) || 0) : 0;
-                this.willScroll.bottomStep = this.willScroll.bottomRoll ? Math.ceil((this.willScroll.offsetY - _edgeBottom) || 0) : 0;
-                this.willScroll.rightStep = this.willScroll.rightRoll ? Math.ceil((this.willScroll.offsetX - _edgeRight) || 0) : 0;
-
-                // 到达边缘时自动卷动滚动条
-                const _cb = () => {
-                    const _timer = setTimeout(() => {
-                        const _edgeRight = this.locationLeft + this.canvasWidth - 100;
-                        const _edgeBottom = this.locationTop + this.canvasHeight - 100;
-                        const _edgeLeft = this.locationLeft + 100;
-                        const _edgeTop = this.locationTop + 100;
-                        let _x = 0;
-                        let _y = 0;
-
-                        if (this.willScroll.offsetX > _edgeRight) {
-                            _x += Math.ceil(this.willScroll.rightStep * this.willScroll.speedRate);
-                        } else if (this.willScroll.offsetX < _edgeLeft) {
-                            _x += Math.floor(this.willScroll.leftStep * this.willScroll.speedRate);
-                        }
-                        if (this.willScroll.offsetY > _edgeBottom) {
-                            _y += Math.ceil(this.willScroll.bottomStep * this.willScroll.speedRate);
-                        } else if (this.willScroll.offsetY < _edgeTop) {
-                            _y += Math.floor(this.willScroll.topStep * this.willScroll.speedRate);
-                        }
-
-                        this.willScroll.offsetX += _x;
-                        this.locationLeft += _x;
-                        this.willScroll.offsetY += _y;
-                        this.locationTop += _y;
-                        this.areaSelect(
-                            this.willScroll.offsetX - this.transform.offsetX - this.selectorConfig.x1,
-                            this.willScroll.offsetY - this.transform.offsetY - this.selectorConfig.y1
-                        );
-                        
-                        this.willScroll.willStart ? _cb() : clearTimeout(_timer);
-                    }, 16);
-                };
                 // 单例执行
-                this.willScroll.isStart === false && _cb();
+                this.willScroll.isStart === false && _cb(() => {
+                    this.areaSelect(
+                        this.willScroll.offsetX - globalTransform.offsetX - this.selectorConfig.x1,
+                        this.willScroll.offsetY - globalTransform.offsetY - this.selectorConfig.y1
+                    );
+                });
                 this.willScroll.isStart = this.willScroll.willStart;
 
                 this.areaSelect(
-                    this.willScroll.offsetX - this.transform.offsetX - this.selectorConfig.x1,
-                    this.willScroll.offsetY - this.transform.offsetY - this.selectorConfig.y1
+                    this.willScroll.offsetX - globalTransform.offsetX - this.selectorConfig.x1,
+                    this.willScroll.offsetY - globalTransform.offsetY - this.selectorConfig.y1
                 );
             }
         });
@@ -576,14 +610,19 @@ export default class Editor {
             this.clearSelectorTool();
 
             if (this.dragConfig.isStart) {
+                let _moveblock = this.getMoveBlock();
+                if (_moveblock) _moveblock.isMove = false;
                 this.reSizeComputed();
                 this.autoFit();
-                // this.refresh();
                 this.dragConfig.reset();
+                this.dragConfig.graphicsLocations = this.dragConfig.graphicsLocations.map(i => {
+                    let _graphics = this.graphicsMap.find(o => o.id === i.id);
+                    return { id: i.id, x: _graphics.x, y: _graphics.y }
+                });
             }
 
             if (this.selectorConfig.isStart) {
-                this.setMoveblock(...this.graphicsMap.filter(i => i.active));
+                this.setMoveblock(false, ...this.graphicsMap.filter(i => i.active));
                 this.selectorConfig.reset();
             }
             
@@ -595,8 +634,8 @@ export default class Editor {
 
         setTimeout(() => {
             // 计算整体画布偏移量
-            this.transform.offsetX = this.canvasWidth + this.regionRect.width * 0.5;
-            this.transform.offsetY = this.canvasHeight + this.regionRect.height * 0.5;
+            globalTransform.offsetX = this.canvasWidth + this.regionRect.width * 0.5;
+            globalTransform.offsetY = this.canvasHeight + this.regionRect.height * 0.5;
             this.locationLeft = this.canvasWidth * 0.5 + this.regionRect.width * 0.5;
             this.locationTop = this.canvasHeight * 0.5 + this.regionRect.height * 0.5;
             this.autoFit();

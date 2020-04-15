@@ -1,19 +1,13 @@
-import BlockGraphics, { BlockGraphicsParams } from './block';
 import { createSVGElement } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
+import { Rect, RectParams } from '.';
 
-export class RectParams extends BlockGraphicsParams {
-    /** 圆角半径 */
-    radius?: number = 0;
-    /** 宽度 */
-    width: number;
-    /** 高度 */
-    height: number;
+export class NoteParams extends RectParams {
 }
 
 /** 矩形 */
-export default class Rect extends BlockGraphics {
-    constructor(config: RectParams) {
+export default class Note extends Rect {
+    constructor(config: NoteParams) {
         super(config);
 
         this.radius = config.radius;
@@ -21,8 +15,8 @@ export default class Rect extends BlockGraphics {
         this.height = config.height;
     }
 
-    type = GraphicsType.rect;
-    description = '矩形';
+    type = GraphicsType.note;
+    description = '笔记';
     /** 圆角半径 */
     radius: number;
     /** 宽度 */

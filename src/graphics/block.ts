@@ -1,4 +1,4 @@
-import Graphics, { GraphicsParams } from "@/core/graphics";
+import Graphics, { GraphicsParams } from "@/graphics/graphics";
 import { createSVGElement } from "@/tools";
 import Transform from '@/core/transform';
 
@@ -7,6 +7,8 @@ export class BlockGraphicsParams extends GraphicsParams {
     x: number;
     /** 坐标Y */
     y: number;
+    /** 边框颜色 */
+    stroke?: string;
     /** 填充颜色 */
     fill?: string;
 }
@@ -19,12 +21,15 @@ export default abstract class BlockGraphics extends Graphics {
         this.x = config.x;
         this.y = config.y;
         this.fill = config.fill;
+        this.stroke = config.stroke;
     }
 
     /** 坐标X */
     x: number;
     /** 坐标Y */
     y: number;
+    /** 边框颜色 */
+    stroke: string;
     /** 填充颜色 */
     fill: string;
     /** 子节点 */
@@ -39,5 +44,5 @@ export default abstract class BlockGraphics extends Graphics {
         this.graphics = null;
     }
 
-    abstract render(transform: Transform);
+    abstract render();
 }

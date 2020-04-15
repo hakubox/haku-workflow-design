@@ -1,6 +1,6 @@
 import Line, { LineGraphicsParams } from '@/graphics/line';
 import { createSVGElement } from "@/tools";
-import Transform from '@/core/transform';
+import Transform, { globalTransform } from '@/core/transform';
 
 
 export class BeeLineParams extends LineGraphicsParams {
@@ -15,7 +15,7 @@ export class BeeLineParams extends LineGraphicsParams {
 }
 
 /** 矩形 */
-export default class Beeline extends Line {
+export default class BeeLine extends Line {
     constructor(config: BeeLineParams) {
         super(config);
 
@@ -45,17 +45,17 @@ export default class Beeline extends Line {
         return Math.abs(this.y2 - this.y);
     }
     
-    setLocation(x: number, y: number, config: Transform) {
+    setLocation(x: number, y: number) {
         return this;
     }
 
-    render(transform: Transform = new Transform()) {
+    render() {
         return this._render(createSVGElement('line', {
             attrs: {
-                x1: ~~(this.x + transform.offsetX),
-                y1: ~~(this.y + transform.offsetY),
-                x2: ~~(this.x2 + transform.offsetX),
-                y2: ~~(this.y2 + transform.offsetY),
+                x1: ~~(this.x + globalTransform.offsetX),
+                y1: ~~(this.y + globalTransform.offsetY),
+                x2: ~~(this.x2 + globalTransform.offsetX),
+                y2: ~~(this.y2 + globalTransform.offsetY),
                 stroke: this.stroke,
                 transform: 'translate(0.5 0.5)',
                 ['stroke-width']: this.width

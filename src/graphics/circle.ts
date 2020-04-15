@@ -1,6 +1,6 @@
 import BlockGraphics, { BlockGraphicsParams } from './block';
 import { createSVGElement } from "@/tools";
-import Transform from '@/core/transform';
+import Transform, { globalTransform } from '@/core/transform';
 
 export class CircleParams extends BlockGraphicsParams {
     /** 半径 */
@@ -29,19 +29,19 @@ export default class Circle extends BlockGraphics {
         return this.radius * 2;
     }
     
-    setLocation(x: number, y: number, transform: Transform) {
+    setLocation(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.graphics.setAttribute('cx', x + this.radius + transform.offsetX + '');
-        this.graphics.setAttribute('cy', y + this.radius + transform.offsetY + '');
+        this.graphics.setAttribute('cx', x + this.radius + globalTransform.offsetX + '');
+        this.graphics.setAttribute('cy', y + this.radius + globalTransform.offsetY + '');
         return this;
     }
 
-    render(transform: Transform = new Transform()) {
+    render() {
         return this._render(createSVGElement('circle', {
             attrs: {
-                cx: this.x + this.radius + transform.offsetX,
-                cy: this.y + this.radius + transform.offsetY,
+                cx: this.x + this.radius + globalTransform.offsetX,
+                cy: this.y + this.radius + globalTransform.offsetY,
                 r: this.radius,
                 fill: 'red'
             }
