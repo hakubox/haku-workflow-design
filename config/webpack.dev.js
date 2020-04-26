@@ -69,7 +69,7 @@ module.exports = merge(common, {
         // 基础路径
         contentBase: "./dist",
         // 端口
-        port: 3001,
+        port: 4003,
         // 显示进度
         progress: true,
         // 静态路径

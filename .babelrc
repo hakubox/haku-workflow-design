@@ -6,5 +6,6 @@
                 "corejs": 3
             }
         ]
-    ]
+    ],
+    "plugins": [["transform-jsx", { "function": "h.default" }]]
 }

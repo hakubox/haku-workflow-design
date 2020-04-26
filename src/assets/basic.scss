@@ -106,3 +106,22 @@ svg {
         font-size: 12px;
     }
 }
+
+[hidden] {
+    display: none !important;
+}
+
+// 文本编辑器
+.text-editor {
+    position: absolute;
+    display: inline-block;
+    z-index: 9999;
+    font-size: 12px;
+    outline: none;
+    background-color: #CCC;
+    min-width: 10px;
+    min-height: 18px;
+    padding: 0px 0px;
+    line-height: 18px;
+    vertical-align: middle;
+}

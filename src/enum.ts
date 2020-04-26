@@ -4,12 +4,16 @@ declare const enum GraphicsType {
     rect = 'rect',
     /** 圆形 */
     circle = 'circle',
+    /** 菱形 */
+    diamond = 'diamond',
     /** 直线 */
     beeline = 'beeline',
     /** 参考线 */
     guideline = 'guideline',
     /** 区域 */
     marquee = 'marquee',
+    /** 文本 */
+    span = 'span',
     /** 笔记 */
     note = 'note',
 

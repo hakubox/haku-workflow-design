@@ -54,16 +54,17 @@ export default class GuideLine extends Line {
             _x1 = _x2 = this.location;
         }
 
-        return this._render(createSVGElement('line', {
-            attrs: {
-                x1: ~~(_x1 + globalTransform.offsetX),
-                y1: ~~(_y1 + globalTransform.offsetY),
-                x2: ~~(_x2 + globalTransform.offsetX),
-                y2: ~~(_y2 + globalTransform.offsetY),
-                stroke: this.stroke,
-                transform: 'translate(0.5 0.5)',
-                ['stroke-width']: this.strokeWidth
-            }
-        }));
+        return this._render(
+            <line
+                x1={~~(_x1 + globalTransform.offsetX)}
+                y1={~~(_y1 + globalTransform.offsetY)}
+                x2={~~(_x2 + globalTransform.offsetX)}
+                y2={~~(_y2 + globalTransform.offsetY)}
+                stroke={this.stroke}
+                transform='translate(0.5 0.5)'
+                strokeWidth={this.strokeWidth}
+            >
+            </line>
+        );
     }
 }

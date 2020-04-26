@@ -84,7 +84,6 @@ export default class MoveBlock extends Rect {
             'stroke-width': 1,
         };
         const _dragMarkStyles = {
-            cursor: 'nw-resize', 
             display: this.isMove ? 'none' : 'block'
         };
 
@@ -94,63 +93,85 @@ export default class MoveBlock extends Rect {
                     x: this.x + globalTransform.offsetX - this.badgePadding,
                     y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'nw-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + this.width / 2 + globalTransform.offsetX - this.badgePadding,
                     y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'n-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
                     y: this.y + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'ne-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
                     y: this.y + this.height / 2 + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'e-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + this.width + globalTransform.offsetX - this.badgePadding,
                     y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'ne-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + this.width / 2 + globalTransform.offsetX - this.badgePadding,
                     y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'e-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + globalTransform.offsetX - this.badgePadding,
                     y: this.y + this.height / 2 + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'n-resize',
+                },
             }),
             createSVGElement('rect', {
                 attrs: {
                     x: this.x + globalTransform.offsetX - this.badgePadding,
                     y: this.y + this.height + globalTransform.offsetY - this.badgePadding,
                     ..._dragMarkAttrs
-                }, style: _dragMarkStyles,
+                }, style: {
+                    ..._dragMarkStyles,
+                    cursor: 'nw-resize',
+                },
             }),
         ];
 
-        let _group = createSVGElement('g', {
-            attrs: {
-            }
-        }, this.contentGraphics = createSVGElement('rect', {
+        return this._render(
+            this.contentGraphics = createSVGElement('rect', {
                 attrs: {
                     x: this.x + globalTransform.offsetX,
                     y: this.y + globalTransform.offsetY,
@@ -165,6 +186,5 @@ export default class MoveBlock extends Rect {
             }),
             ...this.dragmarks
         );
-        return this._render(_group);
     }
 }

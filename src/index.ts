@@ -1,6 +1,6 @@
 import { Editor } from '@/core';
 import "./assets/basic.scss";
-import { Rect } from './graphics';
+import { Rect, Diamond } from './graphics';
 import './enum';
 import './interface';
 
@@ -22,7 +22,16 @@ window['editor'] = new Editor({
                 height: 100,
                 fill: '#ABDDF3',
                 stroke: '#888888'
-            }))
+            })),
+            new Diamond({
+                text: '一个菱形',
+                x: 200,
+                y: 200,
+                width: 200,
+                height: 100,
+                fill: '#ABDDF3',
+                stroke: '#888888'
+            })
         );
         this.addGuideLine(Direction.Horizontal, 0);
         this.addGuideLine(Direction.Vertical, 0);

@@ -50,16 +50,17 @@ export default class BeeLine extends Line {
     }
 
     render() {
-        return this._render(createSVGElement('line', {
-            attrs: {
-                x1: ~~(this.x + globalTransform.offsetX),
-                y1: ~~(this.y + globalTransform.offsetY),
-                x2: ~~(this.x2 + globalTransform.offsetX),
-                y2: ~~(this.y2 + globalTransform.offsetY),
-                stroke: this.stroke,
-                transform: 'translate(0.5 0.5)',
-                ['stroke-width']: this.width
-            }
-        }));
+        return this._render(
+            <line
+                x1={~~(this.x + globalTransform.offsetX)}
+                y1={~~(this.y + globalTransform.offsetY)}
+                x2={~~(this.x2 + globalTransform.offsetX)}
+                y2={~~(this.y2 + globalTransform.offsetY)}
+                stroke={this.stroke}
+                transform='translate(0.5 0.5)'
+                strokeWidth={this.width}
+            >
+            </line>
+        );
     }
 }

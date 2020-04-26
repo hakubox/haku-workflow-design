@@ -1,6 +1,7 @@
 import { createModelId, mergeProps, createSVGElement } from '@/tools';
 import { globalTransform } from '../core/transform';
 import { TextAttrs, Location } from '@/interface';
+import { Span } from '.';
 
 /** 图形初始化参数 */
 export class GraphicsParams {
@@ -25,6 +26,9 @@ export default abstract class Graphics {
         mergeProps(this, config);
     }
 
+    private _active = false;
+    private _isEdit: boolean = false;
+    private _isShow: boolean = true;
     /** 图形id */
     readonly id: string;
 
@@ -33,13 +37,13 @@ export default abstract class Graphics {
     /** 有时为内层核心元素 */
     contentGraphics: SVGElement;
     /** text文本元素 */
-    textGraphics: SVGElement;
+    textGraphics: Span;
     /** 圆角弧度 */
     // fillet: number = 0;
     /** 提示文本 */
     tooltip?: string;
     /** 标签文本 */
-    private text?: string;
+    protected text?: string;
     /** 文字位置 */
     textLocation = TextLocation.Bottom;
     /** 文字颜色 */
@@ -48,32 +52,92 @@ export default abstract class Graphics {
     x: number;
     /** 纵坐标 */
     y: number;
+
+    /** 是否为编辑状态 */
+    get isEdit() {
+        return this._isEdit;
+    }
+    set isEdit(val: boolean) {
+        this._isEdit = val;
+    }
+    /** 是否显示 */
+    get isShow() {
+        return this._isShow;
+    }
+    set isShow(val: boolean) {
+        this._isShow = val;
+        if (val) this.graphics.classList.add('hidden');
+        else this.graphics.classList.remove('hidden');
+    }
+
+    /** 是否为选中状态 */
+    get active() {
+        return this._active;
+    }
+    set active(val: boolean) {
+        if (val) {
+            this.contentGraphics.setAttribute('filter', 'url(#graphics-light)');
+        } else {
+            this.contentGraphics.removeAttribute('filter');
+        }
+        this._active = val;
+    }
+
+    getText() {
+        return this.text;
+    }
     
     /** 设置标签文本 */
     setText(text: string) {
         this.text = text;
-        this.textGraphics.innerHTML = text;
+        this.textGraphics.graphics.innerHTML = text;
         return this;
     }
 
-    /** 设置标签文本 */
+    /** 设置标签文本位置 */
     setTextLocation(location: TextLocation) {
         this.textLocation = location;
-        this.render();
+        this.textGraphics.render();
         return this;
     }
 
-    protected _render(graphics: SVGElement) {
+    
+    protected _renderOrigin(graphics: SVGElement) {
+        let _graphics: SVGElement = graphics;
         if (this.graphics) {
             let _parent = this.graphics.parentNode as SVGElement;
-            _parent.replaceChild(graphics, this.graphics);
+            _parent.replaceChild(_graphics, this.graphics);
             this.contentGraphics.setAttribute('gid', this.id);
             this.contentGraphics.setAttribute('gtype', this.type);
         }
-        this.graphics = graphics;
+        this.graphics = _graphics;
         this.contentGraphics.setAttribute('gid', this.id);
         this.contentGraphics.setAttribute('gtype', this.type);
-        return graphics;
+        return _graphics;
+    }
+
+    public refresh() {
+        this.graphics.parentElement.replaceChild(this.graphics, this.render());
+    }
+
+    protected _render(contentGraphics: SVGElement, ...graphics: SVGElement[]) {
+
+        
+
+        this.contentGraphics = contentGraphics;
+        let _graphics: SVGElement = createSVGElement('g', {
+            attrs: {}
+        }, contentGraphics, ...graphics);
+        if (this.graphics) {
+            let _parent = this.graphics.parentNode as SVGElement;
+            _parent.replaceChild(_graphics, this.graphics);
+        }
+        this.graphics = _graphics;
+        this.textGraphics = this._renderText();
+        this.graphics.appendChild(this.textGraphics.graphics);
+        this.contentGraphics.setAttribute('gid', this.id);
+        this.contentGraphics.setAttribute('gtype', this.type);
+        return _graphics;
     }
 
     /** 获取图形文本的坐标 */
@@ -81,20 +145,20 @@ export default abstract class Graphics {
         return {
             none: { },
             top: {
-                x: this.x + this.getWidth() / 2 + globalTransform.offsetX,
-                y: this.y - 12 + globalTransform.offsetY,
+                x: this.x + this.getWidth() / 2,
+                y: this.y - 12,
             },
             center: {
-                x: this.x + this.getWidth() / 2 + globalTransform.offsetX,
-                y: this.y + this.getHeight() / 2 + globalTransform.offsetY
+                x: this.x + this.getWidth() / 2,
+                y: this.y + this.getHeight() / 2
             },
             bottom: {
-                x: this.x + this.getWidth() / 2 + globalTransform.offsetX,
-                y: this.y + this.getHeight() + 16 + globalTransform.offsetY
+                x: this.x + this.getWidth() / 2,
+                y: this.y + this.getHeight() + 16
             },
             custom: {
-                x: this.x + globalTransform.offsetX,
-                y: this.y + globalTransform.offsetY
+                x: this.x,
+                y: this.y
             }
         }[this.textLocation] as Location;
     }
@@ -118,39 +182,22 @@ export default abstract class Graphics {
      * @param {object} [config={}] 额外配置
      */
     protected _renderText(x: number = 0, y: number = 0, config: Record<string, any> = {}) {
-        const _textProps = Object.assign({}, this.textAttrs, {
+        if (this?.textGraphics?.graphics) {
+            this.textGraphics.graphics.parentElement.removeChild(this.textGraphics.graphics);
+        }
+        return new Span({
+            parent: this.graphics,
+            text: this.text,
             x: this.textAttrs.x + x,
             y: this.textAttrs.y + y,
             ...config
         });
-
-        return createSVGElement('text', {
-            text: this.text,
-            attrs: {
-                ..._textProps,
-                ...config
-            }
-        });
     }
 
-    private _active = false;
     /** 图形类型 */
     abstract type: GraphicsType;
     /** 描述 */
     abstract description: string;
-
-    /** 是否为选中状态 */
-    get active() {
-        return this._active;
-    }
-    set active(val: boolean) {
-        if (val) {
-            this.contentGraphics.setAttribute('filter', 'url(#graphics-light)');
-        } else {
-            this.contentGraphics.removeAttribute('filter');
-        }
-        this._active = val;
-    }
 
     protected setActive(isActive: boolean) {
         if (isActive) {

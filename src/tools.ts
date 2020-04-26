@@ -71,6 +71,7 @@ export function recursive<T>(formVariables: Array<T>, callback?: {
 }
 
 function mergeDomAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, children: Element[] = []) {
+    let _fragment = document.createDocumentFragment();
     if (attrs.text) {
         dom.innerHTML = attrs.text;
     }
@@ -78,15 +79,23 @@ function mergeDomAttrs(dom: HTMLElement | SVGElement, attrs: DomAttr = {}, child
         dom.style[key] = value;
     });
     attrs.attrs && Object.entries(attrs.attrs).forEach(([key, value]) => {
-        dom.setAttribute(key, value);
+        value !== null && value !== undefined && dom.setAttribute(key, value);
     });
     if (attrs.class && typeof(attrs.class) === 'string') attrs.class = [attrs.class];
     attrs.class && dom.classList.add(...attrs.class);
+    if (attrs.show === true) {
+        dom.setAttribute('hidden', '');
+    } else if (attrs.show === false) {
+        dom.removeAttribute('hidden');
+    }
     attrs.events && console.error('暂未添加事件');
     children.forEach(el => {
-        dom.appendChild(el);
+        _fragment.appendChild(el);
     });
+    dom.appendChild(_fragment);
     attrs.parent && attrs.parent.appendChild(dom);
+
+    return dom;
 }
 
 /** 构建SVG节点 */
@@ -95,8 +104,7 @@ export function createSVGElement(nodeName: string, attrs: DomAttr = {}, ...child
         attrs.parent = document.body;
     }
     let _el = document.createElementNS('http://www.w3.org/2000/svg', nodeName);
-    mergeDomAttrs(_el, attrs, children);
-    return _el;
+    return mergeDomAttrs(_el, attrs, children) as SVGElement;
 }
 
 /** 构建HTML节点 */
@@ -105,8 +113,7 @@ export function createElement(nodeName: string, attrs: DomAttr = {}, ...children
         attrs.parent = document.body;
     }
     const _el = document.createElement(nodeName);
-    mergeDomAttrs(_el, attrs, children);
-    return _el;
+    return mergeDomAttrs(_el, attrs, children) as HTMLElement;
 }
 
 /** 方块碰撞检测 */

@@ -5,6 +5,7 @@ import Beeline from '@/graphics/beeline';
 import { Selector, MoveBlock } from '@/graphics';
 import { DragConfig, SelectorConfig, WillScroll } from '@/interface';
 import GuideLine from '@/graphics/guideline';
+import TextEdit from './textedit';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -53,7 +54,6 @@ export default class Editor {
             this.parentElement = this.element.parentElement;
         }
 
-
         // 初始化编辑器界面
         this.element.classList.add('haku-workflow-design');
 
@@ -81,6 +81,9 @@ export default class Editor {
 
         config.onInit ? config.onInit.call(this, this.init.bind(this)) : this.init();
     }
+
+    /** 是否已完成初始化 */
+    isInit: boolean = false;
 
     /** 流程设计器主DOM节点 */
     readonly element: HTMLElement;
@@ -112,6 +115,10 @@ export default class Editor {
      * 画布上的辅助图形列表
      */
     graphicsGuideMap: Graphics[] = [];
+    /**
+     * 文本编辑
+     */
+    textEdit: TextEdit;
 
     /** 横向页数量 */
     get pageXCount() {
@@ -303,14 +310,23 @@ export default class Editor {
         // }
     }
 
+    setEditor(uid: string) {
+        const _graphics = this.graphicsMap.find(i => i.id  === uid);
+        _graphics.isEdit = true;
+        _graphics.textGraphics.isShow = false;
+        this.textEdit.startEdit(_graphics.getText(), _graphics.textCoordinate.x, _graphics.textCoordinate.y, _graphics.getWidth());
+    }
+
     /** 添加图形 */
     addGraphics(...graphics: Graphics[]) {
         for (let i = 0; i < graphics.length; i++) {
             this.graphicsMap.push(graphics[i]);
             this.svgGroupElement.appendChild(graphics[i].render());
+            // if (this.isInit) {
+                this.reSizeComputed();
+                this.autoAdjustBackground();
+            // }
         }
-        this.reSizeComputed();
-        this.autoAdjustBackground();
     }
 
     /** 添加参考线 */
@@ -468,8 +484,7 @@ export default class Editor {
         this.svgElement.addEventListener('dblclick', e => {
             let _gid = (e.target as Element).getAttribute('gid');
             if (_gid) {
-                let _topGraphics = this.graphicsMap.find(i => i.id === _gid);
-                _topGraphics.graphics.setAttribute('fill', 'red');
+                this.setEditor(_gid);
             }
         });
 
@@ -639,9 +654,15 @@ export default class Editor {
             this.locationLeft = this.canvasWidth * 0.5 + this.regionRect.width * 0.5;
             this.locationTop = this.canvasHeight * 0.5 + this.regionRect.height * 0.5;
             this.autoFit();
+            this.isInit = true;
             this.refresh();
             this.autoAdjustBackground();
             console.timeEnd('editor-init');
+            
+            // 标签编辑器
+            this.textEdit = new TextEdit({
+                parent: this.canvasElement
+            });
         }, 1);
     }
 

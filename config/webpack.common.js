@@ -17,6 +17,10 @@ module.exports = {
         new webpack.NamedModulesPlugin(),
         // 模块热替换插件
         new webpack.HotModuleReplacementPlugin(),
+        // 自动全局引用
+        new webpack.ProvidePlugin({
+            h: '@/lib/h.ts'
+        }),
         // 复制插件
         new CopyWebpackPlugin([
             {
@@ -40,7 +44,7 @@ module.exports = {
         //     commonjs: "lodash",
         //     amd: "lodash",
         //     root: "_"
-        // }
+        // },
     },
     // 解析模块请求的选项
     resolve: {

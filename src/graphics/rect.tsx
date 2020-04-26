@@ -1,8 +1,8 @@
-import BlockGraphics, { BlockGraphicsParams } from './block';
+import Block, { BlockParams } from './block';
 import { createSVGElement } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
 
-export class RectParams extends BlockGraphicsParams {
+export class RectParams extends BlockParams {
     /** 圆角半径 */
     radius?: number = 0;
     /** 宽度 */
@@ -12,7 +12,7 @@ export class RectParams extends BlockGraphicsParams {
 }
 
 /** 矩形 */
-export default class Rect extends BlockGraphics {
+export default class Rect extends Block {
     constructor(config: RectParams) {
         super(config);
 
@@ -44,8 +44,8 @@ export default class Rect extends BlockGraphics {
         this.y = y;
         this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
         this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
-        this.textGraphics.setAttribute('x', this.textCoordinate.x + '');
-        this.textGraphics.setAttribute('y', this.textCoordinate.y + '');
+        this.textGraphics.contentGraphics.setAttribute('x', this.textCoordinate.x + globalTransform.offsetX + '');
+        this.textGraphics.contentGraphics.setAttribute('y', this.textCoordinate.y + globalTransform.offsetY + '');
         return this;
     }
 
@@ -72,23 +72,19 @@ export default class Rect extends BlockGraphics {
     }
 
     render() {
-        return this._render(createSVGElement('g', {
-                attrs: {}
-            },
-            this.contentGraphics = createSVGElement('rect', {
-                attrs: {
-                    x: this.x + globalTransform.offsetX,
-                    y: this.y + globalTransform.offsetY,
-                    rx: this.radius,
-                    ry: this.radius,
-                    width: this.width,
-                    height: this.height,
-                    stroke: this.stroke,
-                    transform: 'translate(0.5 0.5)',
-                    fill: this.fill
-                }
-            }),
-            this.textGraphics = this._renderText(),
-        ));
+        return this._render(
+            <rect
+                x={this.x + globalTransform.offsetX}
+                y={this.y + globalTransform.offsetY}
+                rx={this.radius}
+                ry={this.radius}
+                width={this.width}
+                height={this.height}
+                stroke={this.stroke}
+                transform='translate(0.5 0.5)'
+                fill={this.fill}
+            >
+            </rect>
+        );
     }
 }

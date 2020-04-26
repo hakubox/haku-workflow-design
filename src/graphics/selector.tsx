@@ -38,17 +38,19 @@ export default class Selector extends Rect {
     }
 
     render() {
-        return this._render(this.contentGraphics = createSVGElement('rect', {
-            attrs: {
-                x: this.x + globalTransform.offsetX,
-                y: this.y + globalTransform.offsetY,
-                width: this.width,
-                height: this.height,
-                fill: '#1890FF55',
-                stroke: '#1890FF',
-                transform: 'translate(0.5 0.5)',
-                'pointer-events': 'none'
-            }
-        }));
+        return this._renderOrigin(
+            this.contentGraphics = (
+                <rect
+                    x={this.x + globalTransform.offsetX}
+                    y={this.y + globalTransform.offsetY}
+                    width={this.width}
+                    height={this.height}
+                    fill='#1890FF55'
+                    stroke='#1890FF'
+                    transform='translate(0.5 0.5)'
+                    pointerEvents='none'
+                ></rect>
+            )
+        );
     }
 }

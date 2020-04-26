@@ -12,6 +12,7 @@
         "build": "webpack --progress --config ./config/webpack.prod.js",
         "report": "webpack --progress --report --config ./config/webpack.prod.js",
         "dll": "webpack -p --progress --config ./config/webpack.dll.conf.js",
+        "compile": "babel a.jsx -o a_out.js",
         "test": "jest"
     },
     "author": "",
@@ -33,6 +34,7 @@
         "@babel/core": "^7.9.0",
         "@babel/preset-env": "^7.9.5",
         "@types/jest": "^25.2.1",
+        "babel-plugin-transform-jsx": "^2.0.0",
         "clean-webpack-plugin": "^3.0.0",
         "copy-webpack-plugin": "^5.1.1",
         "css-loader": "^3.5.1",

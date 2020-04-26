@@ -91,10 +91,12 @@ export interface IdLocation extends Location {
 
 /** DOM节点参数 */
 export interface DomAttr {
+    /** 是否显示 */
+    show?: boolean;
     /** 节点文本内容 */
     text?: string;
     /** 父节点 */
-    parent?: HTMLElement | SVGElement;
+    parent?: Element | DocumentFragment;
     /** class样式 */
     class?: string | string[];
     /** css样式 */

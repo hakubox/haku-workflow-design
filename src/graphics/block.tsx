@@ -2,7 +2,7 @@ import Graphics, { GraphicsParams } from "@/graphics/graphics";
 import { createSVGElement } from "@/tools";
 import Transform from '@/core/transform';
 
-export class BlockGraphicsParams extends GraphicsParams {
+export class BlockParams extends GraphicsParams {
     /** 坐标X */
     x: number;
     /** 坐标Y */
@@ -14,8 +14,8 @@ export class BlockGraphicsParams extends GraphicsParams {
 }
 
 /** 方块图形 */
-export default abstract class BlockGraphics extends Graphics {
-    constructor(config: BlockGraphicsParams) {
+export default abstract class Block extends Graphics {
+    constructor(config: BlockParams) {
         super(config);
         
         this.x = config.x;
