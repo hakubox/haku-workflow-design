@@ -7,7 +7,7 @@ export class DiamondParams extends RectParams {
 
 /** 菱形 */
 export default class Diamond extends Rect {
-    constructor(config: RectParams) {
+    constructor(config: DiamondParams) {
         super(config);
 
         this.radius = config.radius;
@@ -15,6 +15,7 @@ export default class Diamond extends Rect {
         this.height = config.height;
     }
 
+    static type = GraphicsType.diamond;
     type = GraphicsType.diamond;
     description = '菱形';
     /** 圆角半径 */
@@ -34,8 +35,8 @@ export default class Diamond extends Rect {
     }
     
     setLocation(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+        this.x = Math.round(x);
+        this.y = Math.round(y);
         let _x = this.x + globalTransform.offsetX;
         let _y = this.y + globalTransform.offsetY;
         this.contentGraphics.setAttribute('points', [
@@ -44,10 +45,10 @@ export default class Diamond extends Rect {
             `${_x + this.width},${_y + this.height / 2}`,
             `${_x + this.width / 2},${_y + this.height}`
         ].join(' '));
-        this.textGraphics.textGraphics.setLocation(
-            this.textCoordinate.x,
-            this.textCoordinate.y
-        );
+        // this.textGraphics.textGraphics.setLocation(
+        //     this.textCoordinate.x,
+        //     this.textCoordinate.y
+        // );
         return this;
     }
 

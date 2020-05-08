@@ -8,7 +8,7 @@
 </head>
 <body>
     <svg>
-        <filter id="graphics-light" x="-110%" y="-110%" width="400%" height="400%">
+        <filter id="graphics-light" style="visibility: hidden;z-index: -1;" x="-50%" y="-50%" width="200%" height="200%">
             <feOffset result="offOut" in="SourceGraphic" dx="0" dy="0"></feOffset>
             <feGaussianBlur result="blurOut" in="offOut" stdDeviation="6"></feGaussianBlur>
             <feBlend in="SourceGraphic" in2="blurOut" mode="normal"></feBlend>

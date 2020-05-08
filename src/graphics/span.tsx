@@ -3,10 +3,9 @@ import Transform, { globalTransform } from '@/core/transform';
 import { Graphics, GraphicsParams } from '.';
 
 export class SpanParams extends GraphicsParams {
+    text?: string;
     /** 边缘颜色 */
     stroke?: string;
-    /** 父级节点 */
-    parent: SVGElement;
 }
 
 /** 文本 */
@@ -14,7 +13,7 @@ export default class Span extends Graphics {
     constructor(config: SpanParams) {
         super(config);
         mergeProps(this, config);
-        this.textGraphics = this;
+        // this.textGraphics = this;
         this.render();
     }
 
@@ -22,8 +21,9 @@ export default class Span extends Graphics {
     textLocation = TextLocation.None;
     description = '文本';
 
-    /** 父级节点 */
-    parent: SVGElement;
+    
+    /** 标签文本 */
+    protected text?: string;
     /** 边缘颜色 */
     stroke: string;
     /** 水平对齐 */
@@ -33,11 +33,11 @@ export default class Span extends Graphics {
 
     
     getWidth() {
-        return this.contentGraphics.clientWidth;
+        return this.graphics?.clientWidth || 0;
     }
 
     getHeight() {
-        return this.contentGraphics.clientHeight;
+        return this.graphics?.clientHeight || 0;
     }
     
     setLocation(x: number, y: number) {
@@ -66,7 +66,6 @@ export default class Span extends Graphics {
                 fill={this.textColor}
             >{ this.text || '' }</text>
         );
-        this.parent.appendChild(this.graphics);
         return this.graphics;
     }
 }

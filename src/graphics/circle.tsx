@@ -1,5 +1,4 @@
 import Block, { BlockParams } from './block';
-import { createSVGElement } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
 
 export class CircleParams extends BlockParams {
@@ -7,7 +6,7 @@ export class CircleParams extends BlockParams {
     radius: number;
 }
 
-/** 矩形 */
+/** 圆形 */
 export default class Circle extends Block {
     constructor(config: CircleParams) {
         super(config);
@@ -15,8 +14,9 @@ export default class Circle extends Block {
         this.radius = config.radius;
     }
 
+    static type = GraphicsType.circle;
     type = GraphicsType.circle;
-    description = '矩形';
+    description = '圆形';
     /** 半径 */
     radius: number;
 
@@ -46,13 +46,5 @@ export default class Circle extends Block {
                 fill="red"
             ></circle>
         );
-        // return this._render(createSVGElement('circle', {
-        //     attrs: {
-        //         cx: this.x + this.radius + globalTransform.offsetX,
-        //         cy: this.y + this.radius + globalTransform.offsetY,
-        //         r: this.radius,
-        //         fill: 'red'
-        //     }
-        // }));
     }
 }

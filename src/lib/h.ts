@@ -177,7 +177,11 @@ export default function createElement({ elementName, attributes, children }: { e
     }
     children.forEach((childNode) => {
         if (typeof childNode === "object") {
-            el.appendChild(childNode);
+            if (childNode instanceof Array) {
+                childNode.forEach(node => el.appendChild(node));
+            } else {
+                el.appendChild(childNode);
+            }
         } else if (typeof childNode === "string") {
             el.appendChild(document.createTextNode(childNode));
         } else {

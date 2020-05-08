@@ -32,8 +32,8 @@ export default class MoveBlock extends Rect {
     set isMove(val: boolean) {
         if (val !== this._isMove) {
             this._isMove = val;
-            this.dragmarks.forEach(i => i.style.display = val ? 'none' : 'block');
         }
+        this.dragmarks.forEach(i => i.style.display = this._isMove ? 'none' : 'block');
     }
     /** 计算边距 */
     get badgePadding(): number {
@@ -44,8 +44,8 @@ export default class MoveBlock extends Rect {
 
 
     setLocation(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+        this.x = Math.round(x);
+        this.y = Math.round(y);
         // this.graphicsTarget.forEach(i => i.setLocation(x, y, transform));
         this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
         this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
@@ -135,7 +135,7 @@ export default class MoveBlock extends Rect {
                     ..._dragMarkAttrs
                 }, style: {
                     ..._dragMarkStyles,
-                    cursor: 'ne-resize',
+                    cursor: 'nw-resize',
                 },
             }),
             createSVGElement('rect', {
@@ -145,7 +145,7 @@ export default class MoveBlock extends Rect {
                     ..._dragMarkAttrs
                 }, style: {
                     ..._dragMarkStyles,
-                    cursor: 'e-resize',
+                    cursor: 'n-resize',
                 },
             }),
             createSVGElement('rect', {
@@ -155,7 +155,7 @@ export default class MoveBlock extends Rect {
                     ..._dragMarkAttrs
                 }, style: {
                     ..._dragMarkStyles,
-                    cursor: 'n-resize',
+                    cursor: 'e-resize',
                 },
             }),
             createSVGElement('rect', {
@@ -165,7 +165,7 @@ export default class MoveBlock extends Rect {
                     ..._dragMarkAttrs
                 }, style: {
                     ..._dragMarkStyles,
-                    cursor: 'nw-resize',
+                    cursor: 'ne-resize',
                 },
             }),
         ];

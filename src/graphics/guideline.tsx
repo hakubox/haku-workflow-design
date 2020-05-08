@@ -2,7 +2,6 @@ import { createSVGElement, mergeProps } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
 import { Line, GraphicsParams } from '.';
 
-
 export class GuideLineParams extends GraphicsParams {
     /** 方向 */
     direction: Direction;
@@ -29,6 +28,7 @@ export default class GuideLine extends Line {
     stroke: string;
     /** 线宽 */
     strokeWidth: number;
+    isGuide = true;
 
     getWidth() {
         return 0;

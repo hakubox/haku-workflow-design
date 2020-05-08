@@ -1,4 +1,23 @@
-import Graphics from "./graphics/graphics";
+
+/** 基础事件类型 */
+export class BasicEventType {
+    onClick?: (e: any) => void;
+    onContextmenu?: (e: any) => void;
+    onDblclick?: (e: any) => void;
+    onInput?: (e: any) => void;
+    onMousedown?: (e: any) => void;
+    onMouseenter?: (e: any) => void;
+    onMousemove?: (e: any) => void;
+    onMouseleave?: (e: any) => void;
+    onMouseover?: (e: any) => void;
+    onMouseup?: (e: any) => void;
+    onReset?: (e: any) => void;
+    onResize?: (e: any) => void;
+    onSelect?: (e: any) => void;
+    onTouchend?: (e: any) => void;
+    onTouchmove?: (e: any) => void;
+    onTouchstart?: (e: any) => void;
+}
 
 /** 拖拽配置 */
 export interface DragConfig {

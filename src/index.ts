@@ -1,46 +1,56 @@
 import { Editor } from '@/core';
 import "./assets/basic.scss";
-import { Rect, Diamond } from './graphics';
 import './enum';
 import './interface';
+import { Rect, Diamond } from './graphics';
+import './modules';
+import { Haku } from './core/global';
+import { ToolBar, Drag, Label } from './modules';
+
 
 console.time('editor-init');
 
-window['editor'] = new Editor({
-    onInit(callback) {
-        this.addGraphics(
-            ...[
-                [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800],
-                [-800, 0], [-600, 0], [-400, 0], [-200, 0], [200, 0], [400, 0], [600, 0], [800, 0],
-                // [0, 0]
-            ].map(i => new Rect({
-                text: i.toString(),
-                radius: 8,
-                x: i[0],
-                y: i[1],
-                width: 100,
-                height: 100,
-                fill: '#ABDDF3',
-                stroke: '#888888'
-            })),
-            new Diamond({
-                text: '一个菱形',
-                x: 200,
-                y: 200,
-                width: 200,
-                height: 100,
-                fill: '#ABDDF3',
-                stroke: '#888888'
-            })
-        );
-        this.addGuideLine(Direction.Horizontal, 0);
-        this.addGuideLine(Direction.Vertical, 0);
-        setTimeout(() => {
-            callback();
-        }, 10);
-    }
+const editor = new Editor();
+
+editor.module(Drag);
+editor.module(Label);
+editor.module(ToolBar);
+
+window['editor'] = editor;
+
+editor.on(EditorEventType.EditorInit, function(this: Editor) {
+    this.addGraphics(
+        ...[
+            [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800],
+            [-800, 0], [-600, 0], [-400, 0], [-200, 0], [200, 0], [400, 0], [600, 0], [800, 0],
+        ].map(i => new Rect({
+            radius: 8,
+            x: i[0],
+            y: i[1],
+            width: 100,
+            height: 100,
+            fill: '#ABDDF3',
+            stroke: '#888888',
+            data: { text: '123' }
+        })),
+        new Diamond({
+            x: 200,
+            y: 200,
+            width: 200,
+            height: 100,
+            fill: '#ABDDF3',
+            stroke: '#888888',
+            data: { text: '234' }
+        })
+    );
+    this.addGuideLine(Direction.Horizontal, 0);
+    this.addGuideLine(Direction.Vertical, 0);
 });
 console.log(window['editor']);
+
+setTimeout(() => {
+    console.log(Haku);
+}, 1000);
 
 if (module['hot']) {
     module['hot'].accept("./index.ts", function () {

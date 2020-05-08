@@ -1,7 +1,6 @@
-import Block, { BlockParams } from './block';
+import BasicBlock, { BlockParams } from './basic-block';
 import { createSVGElement } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
-import Emitter from '@/core/emitter';
 
 export class RectParams extends BlockParams {
     /** 圆角半径 */
@@ -13,7 +12,7 @@ export class RectParams extends BlockParams {
 }
 
 /** 矩形 */
-export default class Rect extends Block {
+export default class Rect extends BasicBlock {
     constructor(config: RectParams) {
         super(config);
 
@@ -22,7 +21,6 @@ export default class Rect extends Block {
         this.height = config.height;
     }
 
-    static type = GraphicsType.rect;
     type = GraphicsType.rect;
     description = '矩形';
     /** 圆角半径 */
@@ -44,8 +42,8 @@ export default class Rect extends Block {
     setLocation(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
-        this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
+        this.graphics.setAttribute('x', x + globalTransform.offsetX + '');
+        this.graphics.setAttribute('y', y + globalTransform.offsetY + '');
         return this;
     }
 

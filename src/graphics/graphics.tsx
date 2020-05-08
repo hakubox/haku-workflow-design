@@ -1,14 +1,14 @@
 import { createModelId, mergeProps, createSVGElement } from '@/tools';
-import { globalTransform } from '../core/transform';
-import { TextAttrs, Location } from '@/interface';
-import { Span } from '.';
+import { TextAttrs, Location, BasicEventType } from '@/interface';
+import { Span, Circle } from '.';
+import Module from '@/core/module';
+import { Haku } from '@/core/global';
+import GraphicsModule, { GraphicsModuleParams } from '@/core/graphicsmodule';
+import Emitter from '@/core/emitter';
+import { cloneForce } from "@/lib/clone";
 
 /** 图形初始化参数 */
 export class GraphicsParams {
-    /** 提示文本 */
-    tooltip?: string;
-    /** 标签文本 */
-    text?: string;
     /** 文字颜色 */
     textColor?: string;
     /** 文本位置 */
@@ -17,33 +17,104 @@ export class GraphicsParams {
     x?: number;
     /** 纵坐标点 */
     y?: number;
+    /** 附加数据 */
+    data?: Record<string, any> = {};
+    /** 不加载模块 */    
+    notModule?: boolean = false;
+}
+
+function on(eventType) {
+    // 返回一个用于修饰类成员的装饰器
+    return (target, key, descriptor) => {
+        descriptor.writable = false;
+    }
 }
 
 /** 图形 */
-export default abstract class Graphics {
-    constructor(config: GraphicsParams) {
+export default abstract class Graphics extends Emitter {
+    constructor(config: GraphicsParams = {}) {
+        super();
         this.id = createModelId(16);
         mergeProps(this, config);
+        Object.entries(config.data || {}).forEach(([key, value]) => this._data[key] = value);
+
+        // 绑定事件
+        Object.keys(config).filter(i => i.startsWith('on')).forEach(i => {
+            let _eventName = i.slice(2).toLowerCase();
+            if (!this.events[_eventName]) this.events[_eventName] = [];
+            this.events[_eventName].push(config[i]);
+        });
+
+        // 绑定模块
+        if (!this.notModule) {
+            this.modules = [...Haku.modules.map(i => {
+                if (i.module.moduleType === ModuleLevel.Graphics) {
+                    // @ts-ignore
+                    return { module: new (i.module)(i.options).initGraphics(this), options: cloneForce(i.options) };
+                }
+            })].filter(i => i);
+        }
+
+        // 设置坐标
+        this.setLocation = new Proxy(this.setLocation, {
+            apply: (target, thisArg, [x, y]: [number, number]) => {
+                if (x !== this.x || y !== this.y) {
+                    this.emit(EditorEventType.GraphicsLocationChange, { x, y });
+                    return target.call(this, x, y);
+                }
+            }
+        });
     }
 
     private _active = false;
     private _isEdit: boolean = false;
     private _isShow: boolean = true;
+
+    /** 是否为辅助图形（不参与操作） */
+    isGuide: boolean = false;
+    /** 不加载模块 */
+    notModule: boolean = false;
+
+    // 图形模块
+    modules: {
+        module: GraphicsModule;
+        options: Record<string, any>;
+    }[] = [];
+    
     /** 图形id */
     readonly id: string;
+    /** 顶点位置 */
+    apex: Location[] = [];
+
+    /** 点击顶点 */
+    onClickPoint?: (e: any) => void;
+
+    /** 事件类型 */
+    events: Record<string, Array<(e: any) => void>> = {};
+
+    /** 新增事件 */
+    addEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (e: GlobalEventHandlersEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void {
+        if (!this.events[type]) this.events[type] = [];
+        this.events[type].push(listener);
+        this.contentGraphics.addEventListener(type, listener, options);
+    }
+
+    /** 移除事件 */
+    removeEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (ev: GlobalEventHandlersEventMap[K]) => any, options?: boolean | EventListenerOptions): void {
+        this.events[type].push(listener);
+        this.contentGraphics.removeEventListener(type, listener, options);
+    }
 
     /** 图形元素 */
     graphics: SVGElement;
     /** 有时为内层核心元素 */
     contentGraphics: SVGElement;
     /** text文本元素 */
-    textGraphics: Span;
+    // textGraphics: Span;
     /** 圆角弧度 */
     // fillet: number = 0;
     /** 提示文本 */
     tooltip?: string;
-    /** 标签文本 */
-    protected text?: string;
     /** 文字位置 */
     textLocation = TextLocation.Bottom;
     /** 文字颜色 */
@@ -52,6 +123,17 @@ export default abstract class Graphics {
     x: number;
     /** 纵坐标 */
     y: number;
+
+    /** 绑定数据 */
+    private _data: Record<string, any> = {};
+
+    getData(key: GraphicsData) {
+        return this._data[key];
+    }
+
+    setData(key: GraphicsData, value: any) {
+        this._data[key] = value;
+    }
 
     /** 是否为编辑状态 */
     get isEdit() {
@@ -76,30 +158,30 @@ export default abstract class Graphics {
     }
     set active(val: boolean) {
         if (val) {
-            this.contentGraphics.setAttribute('filter', 'url(#graphics-light)');
+            this.attr('filter', 'url(#graphics-light)');
         } else {
-            this.contentGraphics.removeAttribute('filter');
+            this.removeAttr('filter');
         }
         this._active = val;
     }
 
-    getText() {
-        return this.text;
-    }
+    // getText() {
+    //     return this.text;
+    // }
     
     /** 设置标签文本 */
-    setText(text: string) {
-        this.text = text;
-        this.textGraphics.graphics.innerHTML = text;
-        return this;
-    }
+    // setText(text: string) {
+    //     this.text = text;
+    //     this.textGraphics.graphics.textContent = text;
+    //     return this;
+    // }
 
     /** 设置标签文本位置 */
-    setTextLocation(location: TextLocation) {
-        this.textLocation = location;
-        this.textGraphics.render();
-        return this;
-    }
+    // setTextLocation(location: TextLocation) {
+    //     this.textLocation = location;
+    //     this.textGraphics.render();
+    //     return this;
+    // }
 
     
     protected _renderOrigin(graphics: SVGElement) {
@@ -107,12 +189,9 @@ export default abstract class Graphics {
         if (this.graphics) {
             let _parent = this.graphics.parentNode as SVGElement;
             _parent.replaceChild(_graphics, this.graphics);
-            this.contentGraphics.setAttribute('gid', this.id);
-            this.contentGraphics.setAttribute('gtype', this.type);
         }
         this.graphics = _graphics;
-        this.contentGraphics.setAttribute('gid', this.id);
-        this.contentGraphics.setAttribute('gtype', this.type);
+        this.attr({ gid: this.id, gtype: this.type });
         return _graphics;
     }
 
@@ -121,22 +200,33 @@ export default abstract class Graphics {
     }
 
     protected _render(contentGraphics: SVGElement, ...graphics: SVGElement[]) {
-
-        
-
         this.contentGraphics = contentGraphics;
-        let _graphics: SVGElement = createSVGElement('g', {
-            attrs: {}
-        }, contentGraphics, ...graphics);
-        if (this.graphics) {
+        let _graphics: SVGElement = <g>{ contentGraphics }{ graphics }</g>;
+        if (this?.graphics?.parentNode) {
             let _parent = this.graphics.parentNode as SVGElement;
             _parent.replaceChild(_graphics, this.graphics);
         }
         this.graphics = _graphics;
-        this.textGraphics = this._renderText();
-        this.graphics.appendChild(this.textGraphics.graphics);
-        this.contentGraphics.setAttribute('gid', this.id);
-        this.contentGraphics.setAttribute('gtype', this.type);
+        // this.textGraphics = this._renderText();
+        // this.graphics.appendChild(this.textGraphics.graphics);
+        this.attr({ gid: this.id, gtype: this.type });
+
+        // 绑定事件
+        Object.entries(this.events).forEach(([eventName, events]) => {
+            events.forEach(event => {
+                this.contentGraphics.addEventListener(eventName.slice(2).toLowerCase(), event);
+            });
+        });
+
+        // 加载图形模块
+        if (!this.notModule) {
+            for (let i = 0; i < this.modules.length; i++) {
+                if (this.modules[i].module.moduleType === ModuleLevel.Graphics) {
+                    _graphics = this.modules[i].module.render(_graphics) || _graphics;
+                }
+            }
+        }
+
         return _graphics;
     }
 
@@ -181,18 +271,18 @@ export default abstract class Graphics {
      * @param {number} [y=0] Y坐标偏移量
      * @param {object} [config={}] 额外配置
      */
-    protected _renderText(x: number = 0, y: number = 0, config: Record<string, any> = {}) {
-        if (this?.textGraphics?.graphics) {
-            this.textGraphics.graphics.parentElement.removeChild(this.textGraphics.graphics);
-        }
-        return new Span({
-            parent: this.graphics,
-            text: this.text,
-            x: this.textAttrs.x + x,
-            y: this.textAttrs.y + y,
-            ...config
-        });
-    }
+    // protected _renderText(x: number = 0, y: number = 0, config: Record<string, any> = {}) {
+    //     if (this?.textGraphics?.graphics) {
+    //         this.textGraphics.graphics.parentElement.removeChild(this.textGraphics.graphics);
+    //     }
+    //     return new Span({
+    //         parent: this.graphics,
+    //         text: this.text,
+    //         x: this.textAttrs.x + x,
+    //         y: this.textAttrs.y + y,
+    //         ...config
+    //     });
+    // }
 
     /** 图形类型 */
     abstract type: GraphicsType;
@@ -207,6 +297,34 @@ export default abstract class Graphics {
         }
     }
 
+    /** 获取核心元素属性 */
+    protected attr(key: string): string;
+    /** 设置核心元素属性 */
+    protected attr(key: string, value?: any): void;
+    /** 设置核心元素属性 */
+    protected attr(props: Record<string, any>): void;
+
+    protected attr(key: string | Record<string, any>, value?: any) {
+        if (typeof(key) === 'string') {
+            if (value === undefined) {
+                return this.contentGraphics.getAttribute(key);
+            } else {
+                this.contentGraphics.setAttribute(key, '' + value);
+            }
+        } else {
+            Object.entries(key).forEach(([key, value]) => {
+                this.contentGraphics.setAttribute(key, '' + value);
+            });
+        }
+    }
+
+    /** 删除属性 */
+    protected removeAttr(...props: string[]) {
+        props.forEach(prop => {
+            this.contentGraphics.removeAttribute(prop);
+        })
+    }
+
     /** 移除节点 */
     public destroy() {
         this.graphics.parentNode.removeChild(this.graphics);
@@ -215,6 +333,11 @@ export default abstract class Graphics {
 
     /** 图形构造函数 */
     abstract render(): SVGElement;
+
+    /** 重绘 */
+    painting() {
+
+    }
 
     refreshLocation() {
         this.setLocation(this.x, this.y);
@@ -227,4 +350,13 @@ export default abstract class Graphics {
     abstract getWidth(): number;
     /** 获取图形高度 */
     abstract getHeight(): number;
+
+    /** 绑定顶点处理 */
+    private _bindApex() {
+
+    }
+
+    static install() {
+
+    }
 }

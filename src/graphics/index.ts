@@ -9,7 +9,12 @@ import Selector from './selector';
 import MoveBlock from './moveblock';
 import Graphics, { GraphicsParams } from './graphics';
 import Span, { SpanParams } from './span';
+import { Haku } from '@/core/global';
 
+Haku.use(Circle);
+Haku.use(Rect);
+Haku.use(Diamond);
+Haku.use(BeeLine);
 
 export {
     Graphics,

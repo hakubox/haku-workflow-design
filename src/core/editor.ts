@@ -6,6 +6,10 @@ import { Selector, MoveBlock } from '@/graphics';
 import { DragConfig, SelectorConfig, WillScroll } from '@/interface';
 import GuideLine from '@/graphics/guideline';
 import TextEdit from './textedit';
+import { Haku } from './global';
+import { ModuleClass } from './module';
+import EventEmitter from 'eventemitter3';
+import Emitter from './emitter';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -23,9 +27,10 @@ class EditorParams {
 /**
  * 流程编辑器
  */
-export default class Editor {
+export default class Editor extends Emitter {
     constructor(config: EditorParams = {}) {
-
+        super();
+        
         if (!config.el) {
             config.parent = document.body;
             const _el = document.createElement('div');
@@ -79,7 +84,11 @@ export default class Editor {
         this.defaultPageWidth = this.canvasWidth;
         this.defaultPageHeight = this.canvasHeight;
 
-        config.onInit ? config.onInit.call(this, this.init.bind(this)) : this.init();
+        if (config.onInit) {
+            config.onInit.call(this, this.init.bind(this));
+        } else {
+            this.init();
+        }
     }
 
     /** 是否已完成初始化 */
@@ -197,34 +206,6 @@ export default class Editor {
         height: 0,
     };
 
-    /** 拖拽配置项 */
-    dragConfig: DragConfig = {
-        isStart: false,
-        graphicsLocations: [],
-        x1: 0,
-        y1: 0,
-        x2: 0,
-        y2: 0,
-        get minx(this: DragConfig) {
-            let _x = 99999;
-            this.graphicsLocations.forEach(i => {
-                _x = i.x < _x ? i.x : _x; 
-            });
-            return _x;
-        },
-        get miny(this: DragConfig) {
-            let _y = 99999;
-            this.graphicsLocations.forEach(i => {
-                _y = i.y < _y ? i.y : _y; 
-            });
-            return _y;
-        },
-        reset(this: DragConfig) {
-            this.isStart = false;
-            this.x1 = this.x2 = this.y1 = this.y2 = 0;
-        }
-    };
-
     /** 框选配置项 */
     selectorConfig: SelectorConfig = {
         isStart: false,
@@ -239,7 +220,7 @@ export default class Editor {
     };
 
     /** 根据浏览器视窗高宽度自动计算画布宽高度 */
-    private autoFit() {
+    autoFit() {
         // 重算画布宽高
         this.svgWidth = this.regionRect.width + this.canvasWidth * 2 + 120;
         this.svgHeight = this.regionRect.height + this.canvasHeight * 2 + 120;
@@ -259,7 +240,7 @@ export default class Editor {
     }
 
     /** 卷轴滚动标记 */
-    private willScroll: WillScroll = {
+    willScroll: WillScroll = {
         isStart: false, speed: 0, offsetX: 0, offsetY: 0, speedRate: 0.05,
         topRoll: false, topStep: 0, leftRoll: false, leftStep: 0,  bottomRoll: false,  bottomStep: 0, rightRoll: false, rightStep: 0,
         get willStart(this: WillScroll) {
@@ -269,6 +250,11 @@ export default class Editor {
             this.topRoll = this.rightRoll = this.bottomRoll = this.leftRoll = false;
             this.offsetX = this.offsetY = this.topStep = this.rightStep = this.bottomStep = this.leftStep = 0;
         }
+    }
+
+    /** 加载模块 */
+    module(module: ModuleClass, options?: Record<string, any>) {
+        Haku.module(module, { ...options, editor: this });
     }
 
     /** 重新计算真实图形区域宽高度 */
@@ -313,8 +299,8 @@ export default class Editor {
     setEditor(uid: string) {
         const _graphics = this.graphicsMap.find(i => i.id  === uid);
         _graphics.isEdit = true;
-        _graphics.textGraphics.isShow = false;
-        this.textEdit.startEdit(_graphics.getText(), _graphics.textCoordinate.x, _graphics.textCoordinate.y, _graphics.getWidth());
+        // _graphics.textGraphics.isShow = false;
+        //this.textEdit.startEdit(_graphics.getText(), _graphics.textCoordinate.x, _graphics.textCoordinate.y, _graphics.getWidth());
     }
 
     /** 添加图形 */
@@ -334,7 +320,8 @@ export default class Editor {
         const _line = new GuideLine({
             stroke: 'green',
             location: loc,
-            direction: direction
+            direction: direction,
+            notModule: true
         });
         this.svgElement.appendChild(_line.render());
         this.graphicsGuideMap.push(_line);
@@ -377,7 +364,8 @@ export default class Editor {
             x: _x1,
             y: _y1,
             width: _x2 - _x1,
-            height: _y2 - _y1
+            height: _y2 - _y1,
+            notModule: true
         });
         _moveblock.isMove = isMove;
         this.svgElement.appendChild(_moveblock.render());
@@ -397,46 +385,10 @@ export default class Editor {
     /** 新增框选区域 */
     addSelector(x: number, y: number) {
         const _selector = new Selector({
-            x, y, width: 0, height: 0
+            x, y, width: 0, height: 0, notModule: true
         });
         this.svgElement.appendChild(_selector.render());
         this.graphicsGuideMap.push(_selector);
-    }
-
-    /** 范围选择 */
-    areaSelect(width: number, height: number) {
-        const _selector = this.getSelector();
-        if (!_selector) return;
-
-        _selector?.setArea(width, height);
-
-        let _x = width < 0 ? _selector.x + width : _selector.x;
-        let _y = height < 0 ? _selector.y + height : _selector.y;
-
-        this.graphicsMap.forEach(i => {
-            let isIntersects = intersects(
-                { x: _x, y: _y, width: Math.abs(width), height: Math.abs(height) }, 
-                { x: i.x, y: i.y, width: i.getWidth(), height: i.getHeight() }
-            );
-            i.active = isIntersects;
-            
-            let _index = this.dragConfig.graphicsLocations.findIndex(o => i.id === o.id);
-            if (isIntersects && _index <= -1) {
-                this.dragConfig.graphicsLocations.push({ id: i.id, x: i.x, y: i.y });
-            } else if (!isIntersects && _index >= 0) {
-                this.dragConfig.graphicsLocations.splice(_index, 1);
-            }
-            
-        });
-    }
-
-    /** 批量设置图形坐标（传入相对坐标） */
-    setGraphicsLocation(x1: number, y1: number, x2: number, y2: number, ...graphics: Graphics[]) {
-        graphics.forEach(i => {
-            let _idLocation = this.dragConfig.graphicsLocations.find(o => o.id === i.id);
-            i.setLocation(_idLocation.x + x2 - x1, _idLocation.y + y2 - y1);
-            i.setText([i.x, i.y].toString());
-        });
     }
 
     /** 清空所有选中图形 */
@@ -468,6 +420,61 @@ export default class Editor {
         console.log(this.graphicsMap);
     }
 
+    // 到达边缘时自动卷动滚动条
+    autoScroll(cb) {
+        const _timer = setTimeout(() => {
+            const _edgeRight = this.locationLeft + this.canvasWidth - 100;
+            const _edgeBottom = this.locationTop + this.canvasHeight - 100;
+            const _edgeLeft = this.locationLeft + 100;
+            const _edgeTop = this.locationTop + 100;
+            let _x = 0;
+            let _y = 0;
+
+            if (this.willScroll.offsetX > _edgeRight) {
+                _x += Math.ceil(this.willScroll.rightStep * this.willScroll.speedRate);
+            } else if (this.willScroll.offsetX < _edgeLeft) {
+                _x += Math.floor(this.willScroll.leftStep * this.willScroll.speedRate);
+            }
+            if (this.willScroll.offsetY > _edgeBottom) {
+                _y += Math.ceil(this.willScroll.bottomStep * this.willScroll.speedRate);
+            } else if (this.willScroll.offsetY < _edgeTop) {
+                _y += Math.floor(this.willScroll.topStep * this.willScroll.speedRate);
+            }
+
+            this.willScroll.offsetX += _x;
+            this.locationLeft += _x;
+            this.willScroll.offsetY += _y;
+            this.locationTop += _y;
+            cb();
+            
+            if (this.willScroll.willStart) {
+                this.autoScroll(cb);
+            } else {
+                clearTimeout(_timer);
+            }
+        }, 16);
+    }
+
+    /** 范围选择 */
+    areaSelect(width: number, height: number) {
+        const _selector = this.getSelector();
+        if (!_selector) return;
+
+        _selector?.setArea(width, height);
+
+        let _x = width < 0 ? _selector.x + width : _selector.x;
+        let _y = height < 0 ? _selector.y + height : _selector.y;
+
+        this.graphicsMap.forEach(i => {
+            let isIntersects = intersects(
+                { x: _x, y: _y, width: Math.abs(width), height: Math.abs(height) }, 
+                { x: i.x, y: i.y, width: i.getWidth(), height: i.getHeight() }
+            );
+            i.active = isIntersects;
+        });
+        this.emit(EditorEventType.EditorAreaSelect, this.graphicsMap.filter(i => i.active));
+    }
+
     /** 初始化函数 */
     private init() {
         
@@ -489,35 +496,21 @@ export default class Editor {
         });
 
         this.svgElement.addEventListener('mousedown', e => {
+            this.emit(EditorEventType.EditorMouseDown, e);
+
             let _gid = (e.target as Element).getAttribute('gid');
             this.clearSelectorTool();
 
-            if (_gid) {
-                let _topGraphics = this.graphicsMap.find(i => i.id === _gid);
-                if (!this.dragConfig.graphicsLocations.find(i => i.id === _gid)) {
-                    this.graphicsMap.forEach(i => i.active = false);
-                    this.dragConfig.graphicsLocations = [{ id: _gid, x: _topGraphics.x, y: _topGraphics.y }];
-                    _topGraphics.active = true;
-                    this.setMoveblock(true, _topGraphics);
-                } else if (this.getMoveBlock()) {
-                    this.getMoveBlock().isMove = true;
-                }
-                this.dragConfig.x1 = e.offsetX - globalTransform.offsetX;
-                this.dragConfig.y1 = e.offsetY - globalTransform.offsetY;
-                this.dragConfig.isStart = true;
-            } else {
-                this.dragConfig.graphicsLocations = [];
-                this.clearMoveblockTool();
+            if (!_gid) {
+                this.selectorConfig.isStart = true;
                 this.clearAllSelect();
                 this.selectorConfig.x1 = e.offsetX - globalTransform.offsetX;
                 this.selectorConfig.y1 = e.offsetY - globalTransform.offsetY;
-                this.selectorConfig.isStart = true;
                 this.addSelector(
                     e.offsetX - globalTransform.offsetX,
                     e.offsetY - globalTransform.offsetY
                 );
             }
-            
         });
 
         this.canvasElement.addEventListener('mouseleave', e => {
@@ -525,6 +518,7 @@ export default class Editor {
         });
 
         this.svgElement.addEventListener('mousemove', e => {
+            this.emit(EditorEventType.EditorMouseMove, e);
 
             const _edgeRight = this.locationLeft + this.canvasWidth - 50;
             const _edgeBottom = this.locationTop + this.canvasHeight - 50;
@@ -543,75 +537,17 @@ export default class Editor {
             this.willScroll.bottomStep = this.willScroll.bottomRoll ? Math.ceil((this.willScroll.offsetY - _edgeBottom) || 0) : 0;
             this.willScroll.rightStep = this.willScroll.rightRoll ? Math.ceil((this.willScroll.offsetX - _edgeRight) || 0) : 0;
 
-            // 到达边缘时自动卷动滚动条
-            const _cb = (cb) => {
-                const _timer = setTimeout(() => {
-                    const _edgeRight = this.locationLeft + this.canvasWidth - 100;
-                    const _edgeBottom = this.locationTop + this.canvasHeight - 100;
-                    const _edgeLeft = this.locationLeft + 100;
-                    const _edgeTop = this.locationTop + 100;
-                    let _x = 0;
-                    let _y = 0;
-
-                    if (this.willScroll.offsetX > _edgeRight) {
-                        _x += Math.ceil(this.willScroll.rightStep * this.willScroll.speedRate);
-                    } else if (this.willScroll.offsetX < _edgeLeft) {
-                        _x += Math.floor(this.willScroll.leftStep * this.willScroll.speedRate);
-                    }
-                    if (this.willScroll.offsetY > _edgeBottom) {
-                        _y += Math.ceil(this.willScroll.bottomStep * this.willScroll.speedRate);
-                    } else if (this.willScroll.offsetY < _edgeTop) {
-                        _y += Math.floor(this.willScroll.topStep * this.willScroll.speedRate);
-                    }
-
-                    this.willScroll.offsetX += _x;
-                    this.locationLeft += _x;
-                    this.willScroll.offsetY += _y;
-                    this.locationTop += _y;
-                    cb();
-                    
-                    this.willScroll.willStart ? _cb(cb) : clearTimeout(_timer);
-                }, 16);
-            };
-
-            if (this.dragConfig.isStart) {
-                const _moveBlock = this.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock)
-                _moveBlock.setLocation(
-                    e.offsetX - globalTransform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
-                    e.offsetY - globalTransform.offsetY - this.dragConfig.y1 + this.dragConfig.miny
-                );
-                this.setGraphicsLocation(
-                    this.dragConfig.x1,
-                    this.dragConfig.y1,
-                    e.offsetX - globalTransform.offsetX, 
-                    e.offsetY - globalTransform.offsetY,
-                    ...this.graphicsMap.filter(i => i.active)
-                );
-
-                this.willScroll.isStart === false && _cb(() => {
-                    _moveBlock.setLocation(
-                        e.offsetX - globalTransform.offsetX - this.dragConfig.x1 + this.dragConfig.minx, 
-                        e.offsetY - globalTransform.offsetY - this.dragConfig.y1 + this.dragConfig.miny
-                    );
-                    this.setGraphicsLocation(
-                        this.dragConfig.x1,
-                        this.dragConfig.y1,
-                        e.offsetX - globalTransform.offsetX, 
-                        e.offsetY - globalTransform.offsetY,
-                        ...this.graphicsMap.filter(i => i.active)
-                    );
-                });
-                this.willScroll.isStart = this.willScroll.willStart;
-
-            } else if (this.selectorConfig.isStart) {
+            if (this.selectorConfig.isStart) {
                 
                 // 单例执行
-                this.willScroll.isStart === false && _cb(() => {
-                    this.areaSelect(
-                        this.willScroll.offsetX - globalTransform.offsetX - this.selectorConfig.x1,
-                        this.willScroll.offsetY - globalTransform.offsetY - this.selectorConfig.y1
-                    );
-                });
+                if (this.willScroll.isStart === false) {
+                    this.autoScroll(() => {
+                        this.areaSelect(
+                            this.willScroll.offsetX - globalTransform.offsetX - this.selectorConfig.x1,
+                            this.willScroll.offsetY - globalTransform.offsetY - this.selectorConfig.y1
+                        );
+                    });
+                }
                 this.willScroll.isStart = this.willScroll.willStart;
 
                 this.areaSelect(
@@ -622,19 +558,9 @@ export default class Editor {
         });
 
         document.body.addEventListener('mouseup', e => {
-            this.clearSelectorTool();
+            this.emit(EditorEventType.EditorMouseUp, e);
 
-            if (this.dragConfig.isStart) {
-                let _moveblock = this.getMoveBlock();
-                if (_moveblock) _moveblock.isMove = false;
-                this.reSizeComputed();
-                this.autoFit();
-                this.dragConfig.reset();
-                this.dragConfig.graphicsLocations = this.dragConfig.graphicsLocations.map(i => {
-                    let _graphics = this.graphicsMap.find(o => o.id === i.id);
-                    return { id: i.id, x: _graphics.x, y: _graphics.y }
-                });
-            }
+            this.clearSelectorTool();
 
             if (this.selectorConfig.isStart) {
                 this.setMoveblock(false, ...this.graphicsMap.filter(i => i.active));
@@ -649,8 +575,8 @@ export default class Editor {
 
         setTimeout(() => {
             // 计算整体画布偏移量
-            globalTransform.offsetX = this.canvasWidth + this.regionRect.width * 0.5;
-            globalTransform.offsetY = this.canvasHeight + this.regionRect.height * 0.5;
+            globalTransform.offsetX = Math.round(this.canvasWidth + this.regionRect.width * 0.5);
+            globalTransform.offsetY = Math.round(this.canvasHeight + this.regionRect.height * 0.5);
             this.locationLeft = this.canvasWidth * 0.5 + this.regionRect.width * 0.5;
             this.locationTop = this.canvasHeight * 0.5 + this.regionRect.height * 0.5;
             this.autoFit();
@@ -658,6 +584,8 @@ export default class Editor {
             this.refresh();
             this.autoAdjustBackground();
             console.timeEnd('editor-init');
+
+            this.emit(EditorEventType.EditorInit,);
             
             // 标签编辑器
             this.textEdit = new TextEdit({
