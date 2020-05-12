@@ -37,14 +37,17 @@ export default class Diamond extends Rect {
     setLocation(x: number, y: number) {
         this.x = Math.round(x);
         this.y = Math.round(y);
-        let _x = this.x + globalTransform.offsetX;
-        let _y = this.y + globalTransform.offsetY;
-        this.contentGraphics.setAttribute('points', [
-            `${_x},${_y + this.height / 2}`,
-            `${_x + this.width / 2},${_y}`,
-            `${_x + this.width},${_y + this.height / 2}`,
-            `${_x + this.width / 2},${_y + this.height}`
-        ].join(' '));
+        // let _x = this.x + globalTransform.offsetX;
+        // let _y = this.y + globalTransform.offsetY;
+        // this.contentGraphics.setAttribute('points', [
+        //     `${_x},${_y + this.height / 2}`,
+        //     `${_x + this.width / 2},${_y}`,
+        //     `${_x + this.width},${_y + this.height / 2}`,
+        //     `${_x + this.width / 2},${_y + this.height}`
+        // ].join(' '));
+        
+        this.graphics.setAttribute('transform', `translate(${x + globalTransform.offsetX},${y + globalTransform.offsetY})`);
+
         // this.textGraphics.textGraphics.setLocation(
         //     this.textCoordinate.x,
         //     this.textCoordinate.y
@@ -75,16 +78,14 @@ export default class Diamond extends Rect {
     }
 
     render() {
-        let _x = this.x + globalTransform.offsetX;
-        let _y = this.y + globalTransform.offsetY;
         return this._render(
             this.contentGraphics = (
                 <polygon
                     points={[
-                        `${_x},${_y + this.height / 2}`,
-                        `${_x + this.width / 2},${_y}`,
-                        `${_x + this.width},${_y + this.height / 2}`,
-                        `${_x + this.width / 2},${_y + this.height}`
+                        `${0},${this.height / 2}`,
+                        `${this.width / 2},${0}`,
+                        `${this.width},${this.height / 2}`,
+                        `${this.width / 2},${this.height}`
                     ].join(' ')}
                     stroke={this.stroke}
                     transform="translate(0.5 0.5)"

@@ -7,7 +7,7 @@ import { globalTransform } from '@/core/transform';
 import { Graphics } from '@/graphics';
 
 /**
- * 拖拽类
+ * 拖拽
  */
 export default class Drag extends EditorModule {
     constructor(options: EditorModuleParams) {
@@ -18,10 +18,6 @@ export default class Drag extends EditorModule {
         this.editor.on(EditorEventType.EditorMouseUp, this.mouseUp, this);
         this.editor.on(EditorEventType.EditorAreaSelect, this.areaSelect, this);
     }
-
-    moduleName = 'module-editor-drag';
-    static moduleType = ModuleLevel.Editor;
-    moduleType = ModuleLevel.Editor;
 
     /** 是否开始拖拽 */
     isStart: boolean = false;
@@ -70,17 +66,21 @@ export default class Drag extends EditorModule {
 
         if (_gid) {
             let _topGraphics = this.editor.graphicsMap.find(i => i.id === _gid);
-            if (!this.locations.find(i => i.id === _gid)) {
-                this.editor.graphicsMap.forEach(i => i.active = false);
-                this.locations = [{ id: _gid, x: _topGraphics.x, y: _topGraphics.y }];
-                _topGraphics.active = true;
-                this.editor.setMoveblock(true, _topGraphics);
-            } else if (this.editor.getMoveBlock()) {
-                this.editor.getMoveBlock().isMove = true;
+            if (_topGraphics) {
+                if (!this.locations.find(i => i.id === _gid)) {
+                    this.editor.graphicsMap.forEach(i => {
+                        if(i.active !== false) i.active = false;
+                    });
+                    this.locations = [{ id: _gid, x: _topGraphics.x, y: _topGraphics.y }];
+                    _topGraphics.active = true;
+                    this.editor.setMoveblock(true, _topGraphics);
+                } else if (this.editor.getMoveBlock()) {
+                    this.editor.getMoveBlock().isMove = true;
+                }
+                this.x1 = e.offsetX - globalTransform.offsetX;
+                this.y1 = e.offsetY - globalTransform.offsetY;
+                this.isStart = true;
             }
-            this.x1 = e.offsetX - globalTransform.offsetX;
-            this.y1 = e.offsetY - globalTransform.offsetY;
-            this.isStart = true;
         } else {
             this.locations = [];
             this.editor.clearMoveblockTool();

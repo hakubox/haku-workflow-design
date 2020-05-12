@@ -43,8 +43,9 @@ export default class Span extends Graphics {
     setLocation(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
-        this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
+        // this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
+        // this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
+        this.contentGraphics.setAttribute('transform', `translate(${x + globalTransform.offsetX},${y + globalTransform.offsetY})`);
         return this;
     }
 
@@ -59,8 +60,9 @@ export default class Span extends Graphics {
                 className='graphics-label'
                 gid={this.id}
                 gtype={this.type}
-                x={this.x + globalTransform.offsetX}
-                y={this.y + globalTransform.offsetY}
+                x='0'
+                y='0'
+                transform={`translate(${this.x + globalTransform.offsetX},${this.y + globalTransform.offsetY})`}
                 textAnchor={this.textAnchor}
                 dominantBaseline={this.baseline}
                 fill={this.textColor}

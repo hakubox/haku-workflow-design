@@ -46,6 +46,7 @@ const GLOBAL_ATTRIBUTES = {
     title: "title",
     translate: "translate",
 
+    gid: "gid",
     x: "x",
     y: "y",
     x1: "x1",
@@ -162,18 +163,22 @@ export default function createElement({ elementName, attributes, children }: { e
     });
     if ("style" in attributes) {
         const styles = attributes.style;
-        Object.keys(styles).forEach((prop) => {
-            const value = styles[prop];
-            if (typeof value === "number") {
-                el.style[prop] = `${value}px`;
-            } else if (typeof value === "string") {
-                el.style[prop] = value;
-            } else {
-                throw new Error(
-                    `Expected "number" or "string" but received "${typeof value}"`
-                );
-            }
-        });
+        if (typeof(styles) === 'string') {
+            el.setAttribute('style', styles);
+        } else {
+            Object.keys(styles).forEach((prop) => {
+                const value = styles[prop];
+                if (typeof value === "number") {
+                    el.style[prop] = `${value}px`;
+                } else if (typeof value === "string") {
+                    el.style[prop] = value;
+                } else {
+                    throw new Error(
+                        `Expected "number" or "string" but received "${typeof value}"`
+                    );
+                }
+            });
+        }
     }
     children.forEach((childNode) => {
         if (typeof childNode === "object") {

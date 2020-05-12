@@ -10,6 +10,8 @@ import { Haku } from './global';
 import { ModuleClass } from './module';
 import EventEmitter from 'eventemitter3';
 import Emitter from './emitter';
+import EditorModule from './eidtormodule';
+import { cloneForce } from '@/lib/clone';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -59,27 +61,33 @@ export default class Editor extends Emitter {
             this.parentElement = this.element.parentElement;
         }
 
+        let _graphicsEl: HTMLElement = null;
+        let _footerEl: HTMLElement = null;
+
         // 初始化编辑器界面
         this.element.classList.add('haku-workflow-design');
 
         // 绘制头部区域
-        const _headEl = createElement('div', { parent: this.element, class: 'haku-workflow-design-header' });
+        createElement('div', { parent: this.element, class: 'haku-workflow-design-header' });
         // 绘制主体区域
-        const _bodyEl = createElement('div', { parent: this.element, class: 'haku-workflow-design-body' });
-        // 绘制底部区域
-        const _footerEl = createElement('div', { parent: this.element, class: 'haku-workflow-design-footer' });
-
-        // 绘制左侧图形区域
-        const _graphicsEl = createElement('div', { parent: _bodyEl, class: 'haku-workflow-design-graphics' });
-        // 绘制主画布区域
-        this.canvasElement = createElement('div', { parent: _bodyEl, class: 'haku-workflow-design-canvas' });
-        // 绘制属性栏区域
-        this.propertysElement = createElement('div', { parent: _bodyEl, class: 'haku-workflow-design-propertys' });
-
-        // 绘制svg区域
-        this.svgElement = createSVGElement('svg', { parent: this.canvasElement, class: '' }) as SVGSVGElement;
-        // 绘制统一操作的g标签
-        this.svgGroupElement = createSVGElement('g', { parent: this.svgElement, class: '' }) as SVGGElement;
+        createElement('div', { parent: this.element, class: 'haku-workflow-design-body' },
+            // 绘制左侧图形区域
+            _graphicsEl = createElement('div', { class: 'haku-workflow-design-graphics' }),
+            // 绘制主画布区域
+            this.canvasElement = createElement('div', 
+                { class: 'haku-workflow-design-canvas' },
+                // 绘制svg区域
+                this.svgElement = createSVGElement('svg', 
+                    { class: '' },
+                    // 绘制统一操作的g标签
+                    this.svgGroupElement = createSVGElement('g', { class: '' }) as SVGGElement
+                ) as SVGSVGElement,
+            ),
+            // 绘制属性栏区域
+            this.propertysElement = createElement('div', { class: 'haku-workflow-design-propertys' }),
+            // 绘制底部区域
+            _footerEl = createElement('div', { class: 'haku-workflow-design-footer' })
+        );
 
         this.defaultPageWidth = this.canvasWidth;
         this.defaultPageHeight = this.canvasHeight;
@@ -90,6 +98,12 @@ export default class Editor extends Emitter {
             this.init();
         }
     }
+
+    // 图形模块
+    modules: {
+        module: EditorModule;
+        options: Record<string, any>;
+    }[] = [];
 
     /** 是否已完成初始化 */
     isInit: boolean = false;
@@ -186,6 +200,7 @@ export default class Editor extends Emitter {
 
         const _ids = val.map(i => i.id);
         this.graphicsMap.forEach(i => {
+            console.error('触发A');
             i.active = _ids.includes(i.id);
         });
     }
@@ -219,6 +234,11 @@ export default class Editor extends Emitter {
         }
     };
 
+    /** 根据Id获取图形 */
+    getGraphics(id: string): Graphics | null {
+        return this.graphicsMap.find(i => i.id === id);
+    }
+
     /** 根据浏览器视窗高宽度自动计算画布宽高度 */
     autoFit() {
         // 重算画布宽高
@@ -243,7 +263,7 @@ export default class Editor extends Emitter {
     willScroll: WillScroll = {
         isStart: false, speed: 0, offsetX: 0, offsetY: 0, speedRate: 0.05,
         topRoll: false, topStep: 0, leftRoll: false, leftStep: 0,  bottomRoll: false,  bottomStep: 0, rightRoll: false, rightStep: 0,
-        get willStart(this: WillScroll) {
+        get willStart() {
             return this.topRoll || this.rightRoll || this.bottomRoll || this.leftRoll;
         },
         reset(this: WillScroll) {
@@ -255,6 +275,13 @@ export default class Editor extends Emitter {
     /** 加载模块 */
     module(module: ModuleClass, options?: Record<string, any>) {
         Haku.module(module, { ...options, editor: this });
+
+        if (module.__proto__.name === 'EditorModule') {
+            if (!options) options = {};
+            if (!options.editor) options.editor = this;
+            // @ts-ignore
+            this.modules.push({ module: new (module)(options).moduleInit(this), options: cloneForce(options) });
+        }
     }
 
     /** 重新计算真实图形区域宽高度 */
@@ -308,6 +335,9 @@ export default class Editor extends Emitter {
         for (let i = 0; i < graphics.length; i++) {
             this.graphicsMap.push(graphics[i]);
             this.svgGroupElement.appendChild(graphics[i].render());
+            graphics[i].on(EditorEventType.GraphicsLocationChange, (...args) => {
+                this.emit(EditorEventType.GraphicsLocationChange, ...args);
+            });
             // if (this.isInit) {
                 this.reSizeComputed();
                 this.autoAdjustBackground();
@@ -573,6 +603,14 @@ export default class Editor extends Emitter {
         this.autoFit();
         this.reSizeComputed();
 
+        // 绑定模块
+        this.modules = [...Haku.modules.map(i => {
+            if (i.module.__proto__.name === 'EditorModule') {
+                // @ts-ignore
+                return { module: new (i.module)(i.options).initGraphics(this), options: cloneForce(i.options) };
+            }
+        })].filter(i => i);
+
         setTimeout(() => {
             // 计算整体画布偏移量
             globalTransform.offsetX = Math.round(this.canvasWidth + this.regionRect.width * 0.5);
@@ -585,7 +623,7 @@ export default class Editor extends Emitter {
             this.autoAdjustBackground();
             console.timeEnd('editor-init');
 
-            this.emit(EditorEventType.EditorInit,);
+            this.emit(EditorEventType.EditorInit);
             
             // 标签编辑器
             this.textEdit = new TextEdit({

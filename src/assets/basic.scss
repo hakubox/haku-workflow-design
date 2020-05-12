@@ -23,7 +23,7 @@ html, body {
 
     // 头部区域
     > .haku-workflow-design-header {
-        height: 100px;
+        // height: 100px;
         flex-shrink: 0;
         box-shadow: 0px 0px 0px 1px #D0D0D0, 0px -1px 0px 1px white;
         z-index: 1;
@@ -43,14 +43,14 @@ html, body {
         flex-grow: 2;
 
         > .haku-workflow-design-graphics {
-            width: 200px;
+            // width: 200px;
             flex-shrink: 0;
             box-shadow: 0px 1px 0px 1px #D0D0D0;
             z-index: 1;
         }
 
         > .haku-workflow-design-propertys {
-            width: 200px;
+            // width: 200px;
             flex-shrink: 0;
             box-shadow: 0px 1px 0px 1px #D0D0D0;
         }
@@ -105,9 +105,13 @@ svg {
         dominant-baseline: middle;
         font-size: 12px;
     }
+
+    > g {
+        will-change: transform;
+    }
 }
 
-[hidden] {
+[hidden], .hidden {
     display: none !important;
 }
 
@@ -124,4 +128,24 @@ svg {
     padding: 0px 0px;
     line-height: 18px;
     vertical-align: middle;
+}
+
+.graphics-node {
+
+    > .connect-point {
+        display: none;
+    }
+
+    &:hover {
+
+        &:not(.active) {
+        
+            > .graphics-node-content {
+
+                ~ .connect-point {
+                    display: block;
+                }
+            }
+        }
+    }
 }

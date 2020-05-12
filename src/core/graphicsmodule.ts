@@ -2,7 +2,7 @@ import { Editor } from '.';
 import { Graphics } from '@/graphics';
 import Module, { ModuleParams } from './module';
 
-export class GraphicsModuleParams extends ModuleParams {
+export interface GraphicsModuleParams extends ModuleParams {
     graphics: Graphics;
 }
 
@@ -19,6 +19,9 @@ export default abstract class GraphicsModule extends Module {
     /** 图形 */
     protected _graphics: Graphics;
 
+    /** 编辑器（可空） */
+    protected _editor: Editor;
+
     get graphics() {
         return this._graphics;
     }
@@ -26,12 +29,20 @@ export default abstract class GraphicsModule extends Module {
         this._graphics = val;
     }
 
+    get editor() {
+        return this._editor;
+    }
+    set editor(val) {
+        this._editor = val;
+    }
+
     /** 图形重绘钩子 */
     abstract render(svg: SVGElement): SVGElement | void | undefined;
 
-    /** 初始化图形 */
-    initGraphics(graphics: Graphics) {
+    /** 初始化图形模块 */
+    moduleInit(graphics: Graphics, editor?: Editor) {
         this._graphics = graphics;
+        if (editor) this._editor = editor;
         this.init();
         return this;
     }

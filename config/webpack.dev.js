@@ -71,7 +71,7 @@ module.exports = merge(common, {
         // 端口
         port: 4003,
         // 显示进度
-        progress: true,
+        progress: false,
         // 静态路径
         contentBase: './public',
         // 内联模式：一段处理实时重载的脚本被插入到你的包(bundle)中，并且构建消息将会出现在浏览器控制台
@@ -88,4 +88,19 @@ module.exports = merge(common, {
             'process.env.NODE_ENV': JSON.stringify('dev')
         })
     ],
+    // 运行时控制台输出配置
+    stats: {
+        // 是否显示全部输出内容
+        // all: true,
+        // 是否显示打包资产信息
+        assets: true,
+        // 是否显示子节点信息
+        children: false,
+        // 信息输出类型
+        logging: 'info',
+        // 是否输出模块信息
+        modules: false,
+        // 是否输出文字颜色
+        colors: true,
+    }
 });

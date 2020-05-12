@@ -44,8 +44,9 @@ export default class Rect extends Block {
     setLocation(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
-        this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
+        // this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
+        // this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
+        this.graphics.setAttribute('transform', `translate(${x + globalTransform.offsetX},${y + globalTransform.offsetY})`);
         return this;
     }
 
@@ -74,14 +75,14 @@ export default class Rect extends Block {
     render() {
         return this._render(
             <rect
-                x={this.x + globalTransform.offsetX}
-                y={this.y + globalTransform.offsetY}
+                x='0'
+                y='0'
                 rx={this.radius}
                 ry={this.radius}
                 width={this.width}
                 height={this.height}
                 stroke={this.stroke}
-                transform='translate(0.5 0.5)'
+                transform={`translate(0.5,0.5)`}
                 fill={this.fill}
             >
             </rect>

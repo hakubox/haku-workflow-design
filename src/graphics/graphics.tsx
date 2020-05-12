@@ -6,9 +6,14 @@ import { Haku } from '@/core/global';
 import GraphicsModule, { GraphicsModuleParams } from '@/core/graphicsmodule';
 import Emitter from '@/core/emitter';
 import { cloneForce } from "@/lib/clone";
+import { globalTransform } from '@/core/transform';
+import { debug } from 'webpack';
+import { Editor } from '@/core';
 
 /** 图形初始化参数 */
 export class GraphicsParams {
+    /** 编辑器（可空） */
+    editor?: Editor;
     /** 文字颜色 */
     textColor?: string;
     /** 文本位置 */
@@ -23,20 +28,13 @@ export class GraphicsParams {
     notModule?: boolean = false;
 }
 
-function on(eventType) {
-    // 返回一个用于修饰类成员的装饰器
-    return (target, key, descriptor) => {
-        descriptor.writable = false;
-    }
-}
-
 /** 图形 */
 export default abstract class Graphics extends Emitter {
     constructor(config: GraphicsParams = {}) {
         super();
         this.id = createModelId(16);
         mergeProps(this, config);
-        Object.entries(config.data || {}).forEach(([key, value]) => this._data[key] = value);
+        Object.entries(config.data || {}).forEach(([key, value]) => this.setData(key, value));
 
         // 绑定事件
         Object.keys(config).filter(i => i.startsWith('on')).forEach(i => {
@@ -48,22 +46,30 @@ export default abstract class Graphics extends Emitter {
         // 绑定模块
         if (!this.notModule) {
             this.modules = [...Haku.modules.map(i => {
-                if (i.module.moduleType === ModuleLevel.Graphics) {
+                if (i.module.__proto__.name === 'GraphicsModule') {
                     // @ts-ignore
-                    return { module: new (i.module)(i.options).initGraphics(this), options: cloneForce(i.options) };
+                    return { module: new (i.module)(i.options).moduleInit(this, config.editor), options: cloneForce(i.options) };
                 }
             })].filter(i => i);
         }
 
         // 设置坐标
-        this.setLocation = new Proxy(this.setLocation, {
-            apply: (target, thisArg, [x, y]: [number, number]) => {
-                if (x !== this.x || y !== this.y) {
-                    this.emit(EditorEventType.GraphicsLocationChange, { x, y });
-                    return target.call(this, x, y);
-                }
+        // this.setLocation = new Proxy(this.setLocation, {
+        //     apply: (target, thisArg, [x, y]: [number, number]) => {
+        //         if (x !== this.x || y !== this.y) {
+        //             this.emit(EditorEventType.GraphicsLocationChange, { x, y });
+        //             return target.call(this, x, y);
+        //         }
+        //     }
+        // });
+
+        const __setLocation = this.setLocation;
+        this.setLocation = (x: number, y:number) => {
+            if (x !== this.x || y !== this.y) {
+                this.emit(EditorEventType.GraphicsLocationChange, { graphics: this, x, y });
+                return __setLocation.call(this, x, y);
             }
-        });
+        }
     }
 
     private _active = false;
@@ -124,17 +130,6 @@ export default abstract class Graphics extends Emitter {
     /** 纵坐标 */
     y: number;
 
-    /** 绑定数据 */
-    private _data: Record<string, any> = {};
-
-    getData(key: GraphicsData) {
-        return this._data[key];
-    }
-
-    setData(key: GraphicsData, value: any) {
-        this._data[key] = value;
-    }
-
     /** 是否为编辑状态 */
     get isEdit() {
         return this._isEdit;
@@ -157,12 +152,17 @@ export default abstract class Graphics extends Emitter {
         return this._active;
     }
     set active(val: boolean) {
-        if (val) {
-            this.attr('filter', 'url(#graphics-light)');
-        } else {
-            this.removeAttr('filter');
+        if(val !== undefined && this._active !== val) {
+            this.emit(EditorEventType.GraphicsActive, val);
+            if (val) {
+                this.attr('filter', 'url(#graphics-light)');
+                this.graphics.classList.add('active');
+            } else {
+                this.removeAttr('filter');
+                this.graphics.classList.remove('active');
+            }
+            this._active = val;
         }
-        this._active = val;
     }
 
     // getText() {
@@ -201,7 +201,10 @@ export default abstract class Graphics extends Emitter {
 
     protected _render(contentGraphics: SVGElement, ...graphics: SVGElement[]) {
         this.contentGraphics = contentGraphics;
-        let _graphics: SVGElement = <g>{ contentGraphics }{ graphics }</g>;
+        let _graphics: SVGElement = (<g
+            className="graphics-node"
+            transform={`translate(${this.x + globalTransform.offsetX},${this.y + globalTransform.offsetY})`}
+        >{ contentGraphics }{ graphics }</g>);
         if (this?.graphics?.parentNode) {
             let _parent = this.graphics.parentNode as SVGElement;
             _parent.replaceChild(_graphics, this.graphics);
@@ -211,11 +214,26 @@ export default abstract class Graphics extends Emitter {
         // this.graphics.appendChild(this.textGraphics.graphics);
         this.attr({ gid: this.id, gtype: this.type });
 
+        this.contentGraphics.classList.add('graphics-node-content');
+
         // 绑定事件
         Object.entries(this.events).forEach(([eventName, events]) => {
             events.forEach(event => {
                 this.contentGraphics.addEventListener(eventName.slice(2).toLowerCase(), event);
             });
+        });
+
+        this.contentGraphics.addEventListener('mouseenter', (e) => {
+            this.emit(EditorEventType.GraphicsMouseEnter, e);
+        });
+        this.contentGraphics.addEventListener('mouseout', (e) => {
+            this.emit(EditorEventType.GraphicsMouseOut, e);
+        });
+        this.contentGraphics.addEventListener('mousedown', (e) => {
+            this.emit(EditorEventType.GraphicsMouseDown, e);
+        });
+        this.contentGraphics.addEventListener('mouseup', (e) => {
+            this.emit(EditorEventType.GraphicsMouseUp, e);
         });
 
         // 加载图形模块
@@ -288,14 +306,6 @@ export default abstract class Graphics extends Emitter {
     abstract type: GraphicsType;
     /** 描述 */
     abstract description: string;
-
-    protected setActive(isActive: boolean) {
-        if (isActive) {
-
-        } else {
-
-        }
-    }
 
     /** 获取核心元素属性 */
     protected attr(key: string): string;

@@ -1,18 +1,15 @@
 import { Graphics, Span } from "@/graphics";
-import { TextAttrs } from '@/interface';
+import { TextAttrs, Location } from '@/interface';
 import Module from "@/core/module";
 import { Editor } from '@/core';
 import GraphicsModule, { GraphicsModuleParams } from '@/core/graphicsmodule';
+import { globalTransform } from '@/core/transform';
 
 /** 标签文本 */
 export default class Label extends GraphicsModule {
     constructor(options: GraphicsModuleParams) {
         super(options);
     }
-
-    moduleName = 'module-graphics-label';
-    static moduleType = ModuleLevel.Editor;
-    moduleType = ModuleLevel.Editor;
 
     // text: string = '';
     /** 文字位置 */
@@ -24,26 +21,38 @@ export default class Label extends GraphicsModule {
     textGraphics: Span;
 
     /** 获取图形文本的坐标 */
-    get textCoordinate(): Location { 
-        return {
-            none: { },
-            top: {
-                x: this.graphics.x + this.graphics.getWidth() / 2,
-                y: this.graphics.y - 12,
-            },
-            center: {
-                x: this.graphics.x + this.graphics.getWidth() / 2,
-                y: this.graphics.y + this.graphics.getHeight() / 2
-            },
-            bottom: {
-                x: this.graphics.x + this.graphics.getWidth() / 2,
-                y: this.graphics.y + this.graphics.getHeight() + 16
-            },
-            custom: {
-                x: this.graphics.x,
-                y: this.graphics.y
-            }
-        }[this.textLocation] as Location;
+    textCoordinate(x?: number, y?: number): Location { 
+        const _width = this.graphics.getWidth();
+        const _height = this.graphics.getHeight();
+        const _lx = x || this.graphics.x;
+        const _ly = y || this.graphics.y;
+        let _ex = 0;
+        let _ey = 0;
+        switch (this.textLocation) {
+            case TextLocation.None:
+                _ex = 0;
+                _ey = 0;
+                break;
+            case TextLocation.Top:
+                _ex = _lx + _width / 2;
+                _ey = _ly - 12;
+                break;
+            case TextLocation.Center:
+                _ex = _lx + _width / 2;
+                _ey = _ly + _height / 2;
+                break;
+            case TextLocation.Bottom:
+                _ex = _lx + _width / 2;
+                _ey = _ly + _height + 16;
+                break;
+            case TextLocation.Custom:
+                _ex = _lx;
+                _ey = _ly;
+                break;
+            default:
+                break;
+        }
+        return { x: _ex, y: _ey };
     }
 
     /** 获取图形文本的所有属性 */
@@ -51,7 +60,7 @@ export default class Label extends GraphicsModule {
         return {
             fill: this.textColor,
             class: 'graphics-label',
-            ...this.textCoordinate,
+            ...this.textCoordinate(),
             ...{
                 none: { class: 'display-none' }
             }[this.textLocation]
@@ -60,7 +69,6 @@ export default class Label extends GraphicsModule {
     
     /** 设置标签文本 */
     setText(text: string) {
-        // this.text = text;
         this.graphics.setData(GraphicsData.text, text);
         this.textGraphics.graphics.textContent = text;
         return this;
@@ -85,8 +93,8 @@ export default class Label extends GraphicsModule {
         }
         const _span = new Span({
             text: this.graphics.getData(GraphicsData.text),
-            x: this.textAttrs.x,
-            y: this.textAttrs.y,
+            x: - globalTransform.offsetX,
+            y: - globalTransform.offsetY,
             notModule: true,
             ...config
         });
@@ -95,18 +103,25 @@ export default class Label extends GraphicsModule {
 
     init() {
         this.textGraphics = this.renderText();
-        console.log('初始化', this.graphics.id);
         this.graphics.on(EditorEventType.GraphicsLocationChange, this.setLocation, this);
     }
     
     render(svg: SVGElement) {
-        svg.appendChild(this.textGraphics.render());
+        const _width = this.graphics.getWidth();
+        const _height = this.graphics.getHeight();
+        const [x, y] = {
+            none: () => [0, 0],
+            top: () => [_width / 2, -12 ],
+            center: () => [_width / 2, _height / 2 ],
+            bottom: () => [_width / 2, _height + 16 ],
+            custom: () => [0, 0],
+        }[this.textLocation]() as [number, number];
+        const textSvg = this.textGraphics.render();
+        textSvg.setAttribute('transform', `translate(${x},${y})`);
+        svg.appendChild(textSvg);
         return svg;
     }
     
-    setLocation({ x, y }) {
-        if (this.textAttrs.x !== x || this.textAttrs.y !== y) {
-            this.textGraphics.setLocation(this.textAttrs.x, this.textAttrs.y);
-        }
+    setLocation({x, y}) {
     }
 }

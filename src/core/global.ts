@@ -48,9 +48,7 @@ class Global {
         if (typeof(key) === 'string') {
             return this.moduleMap[key];
         } else {
-            // @ts-ignore
-            const _module = new key(options);
-            this.moduleMap[_module.moduleName] = {
+            this.moduleMap[key.name] = {
                 module: key,
                 options: options
             };

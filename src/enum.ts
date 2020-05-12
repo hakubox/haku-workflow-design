@@ -5,26 +5,47 @@ declare const enum EditorEventType {
     EditorInit = 'editor-init',
     /** 鼠标按下 */
     EditorMouseDown = 'editor-mouse-down',
-    /** 鼠标按下 */
+    /** 鼠标移动 */
     EditorMouseMove = 'editor-mouse-move',
-    /** 鼠标按下 */
+    /** 鼠标松开 */
     EditorMouseUp = 'editor-mouse-up',
     /** 选择范围 */
     EditorAreaSelect = "editor-area-select",
+    /** 鼠标按下 */
+    GraphicsMouseDown = 'graphics-mouse-down',
+    /** 鼠标移动 */
+    GraphicsMouseMove = 'graphics-mouse-move',
+    /** 鼠标松开 */
+    GraphicsMouseUp = 'graphics-mouse-up',
+    /** 鼠标移入 */
+    GraphicsMouseEnter = 'graphics-mouse-enter',
+    /** 鼠标移出 */
+    GraphicsMouseOut = 'graphics-mouse-out',
     /** 图形选择 */
-    GraphicsSelect = "graphics-select",
+    GraphicsActive = "graphics-active",
     /** 图形选择 */
     GraphicsMove = "graphics-move",
     /** 图形文字编辑 */
     GraphicsTextEdited = "graphics-text-edited",
     /** 图形位置变动 */
     GraphicsLocationChange = "graphics-location-change",
+    /** 图形连线-开始 */
+    GraphicsConnectStart = "graphics-connect-start",
+    /** 图形连线-移动 */
+    GraphicsConnecting = "graphics-connecting",
+    /** 图形连线-结束 */
+    GraphicsConnectEnd = "graphics-connect-end",
+    
+    /** 光标移动 */
+    MouseMove = "mouse-move",
 }
 
 /** 图形附加数据 */
 declare const enum GraphicsData {
     /** 图形标签文本 */
     text = "text",
+    /** 图形连接线 */
+    connectLines = "connectLines",
 }
 
 /** 模块级别 */

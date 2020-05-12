@@ -108,7 +108,7 @@ export function createSVGElement(nodeName: string, attrs: DomAttr = {}, ...child
 }
 
 /** 构建HTML节点 */
-export function createElement(nodeName: string, attrs: DomAttr = {}, ...children: HTMLElement[]): HTMLElement {
+export function createElement(nodeName: string, attrs: DomAttr = {}, ...children: Element[]): HTMLElement {
     if (!attrs.parent) {
         attrs.parent = document.body;
     }

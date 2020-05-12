@@ -1,15 +1,13 @@
 import { Editor } from '.';
 import { Graphics } from '@/graphics';
 
-export class ModuleClass {
+export interface ModuleClass {
     /** 安装 */
     install: () => void;
-    /** 模块名 */
-    moduleType: string;
     [key: string]: any;
 }
 
-export class ModuleParams {
+export interface ModuleParams {
     /** 子模块 */
     dependencies: Module[];
     [str: string]: any;
@@ -20,14 +18,11 @@ export default abstract class Module {
     constructor(options: ModuleParams) {
         this.options = options;
 
-        this.dependencies = options.dependencies;
+        this.dependencies = options.dependencies || [];
     }
 
     /** 子模块 */
     dependencies: Module[] = [];
-
-    /** 模块名称 */
-    abstract moduleName: string;
 
     /** 模块类型 */
     abstract moduleType: ModuleLevel;

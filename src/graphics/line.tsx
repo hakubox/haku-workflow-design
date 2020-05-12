@@ -1,4 +1,5 @@
 import Graphics, { GraphicsParams } from './graphics';
+import { Location } from '@/interface';
 
 /** 图形初始化参数 */
 export class LineGraphicsParams extends GraphicsParams {
@@ -18,17 +19,8 @@ export default abstract class Line extends Graphics {
     /** 获取图形高度 */
     abstract getHeight(): number;
 
-    protected _render(graphics: SVGElement) {
-        if (this.graphics) {
-            let _parent = this.graphics.parentNode as SVGElement;
-            _parent.replaceChild(graphics, this.graphics);
-            graphics.setAttribute('lid', this.id);
-        }
-        this.graphics = graphics;
-        graphics.setAttribute('lid', this.id);
-        return graphics;
-    }
-
     /** 图形构造函数 */
     abstract render(): SVGElement;
+    /** 设置线的坐标点 */
+    abstract setPoints(...locations: Location[]): this;
 }
