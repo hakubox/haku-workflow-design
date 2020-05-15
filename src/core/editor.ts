@@ -1,4 +1,4 @@
-import { getType, createElement, createSVGElement, recursive, intersects, setStandardCoordinate } from '@/tools';
+import { getType, createElement, createSVGElement, recursive, intersects, setStandardCoordinate, createModelId } from '@/tools';
 import Graphics from '../graphics/graphics';
 import Transform, { globalTransform } from './transform';
 import Beeline from '@/graphics/beeline';
@@ -8,10 +8,9 @@ import GuideLine from '@/graphics/guideline';
 import TextEdit from './textedit';
 import { Haku } from './global';
 import { ModuleClass } from './module';
-import EventEmitter from 'eventemitter3';
-import Emitter from './emitter';
 import EditorModule from './eidtormodule';
 import { cloneForce } from '@/lib/clone';
+import AttachData from './attachdata';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -29,9 +28,11 @@ class EditorParams {
 /**
  * 流程编辑器
  */
-export default class Editor extends Emitter {
+export default class Editor extends AttachData {
     constructor(config: EditorParams = {}) {
         super();
+
+        this.id = createModelId(26);
         
         if (!config.el) {
             config.parent = document.body;
@@ -98,6 +99,9 @@ export default class Editor extends Emitter {
             this.init();
         }
     }
+
+    /** 编辑器随机Id */
+    id: string;
 
     // 图形模块
     modules: {
@@ -234,6 +238,19 @@ export default class Editor extends Emitter {
         }
     };
 
+    /** 事件绑定 */
+    on(eventType: EditorEventType, event: (source?) => void, bindThis?: any) {
+        Haku.on(ModuleLevel.Editor, this.id, eventType, event, bindThis);
+    }
+    /** 单次事件绑定 */
+    once(eventType: EditorEventType, event: (source?) => void, bindThis?: any) {
+        Haku.once(ModuleLevel.Editor, this.id, eventType, event, bindThis);
+    }
+    /** 事件绑定 */
+    emit(params: any = {}, ...otherParams: any[]) {
+        Haku.emit(ModuleLevel.Editor, this.id, params, ...otherParams);
+    }
+
     /** 根据Id获取图形 */
     getGraphics(id: string): Graphics | null {
         return this.graphicsMap.find(i => i.id === id);
@@ -342,6 +359,19 @@ export default class Editor extends Emitter {
                 this.reSizeComputed();
                 this.autoAdjustBackground();
             // }
+        }
+    }
+
+    /** 往指定位置插入添加图形 */
+    insertGraphics(index: number, ...graphics: Graphics[]) {
+        for (let i = 0; i < graphics.length; i++) {
+            this.graphicsMap.splice(index, 0, graphics[i]);
+            this.svgGroupElement.insertBefore(graphics[i].render(), this.svgGroupElement.childNodes[index]);
+            graphics[i].on(EditorEventType.GraphicsLocationChange, (...args) => {
+                this.emit(EditorEventType.GraphicsLocationChange, ...args);
+            });
+            this.reSizeComputed();
+            this.autoAdjustBackground();
         }
     }
 

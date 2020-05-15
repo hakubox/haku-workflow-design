@@ -1,7 +1,8 @@
 import Line, { LineGraphicsParams } from '@/graphics/line';
-import { createSVGElement } from "@/tools";
+import { createSVGElement, getAngle } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
 import { Location } from '@/interface';
+import svgpath from 'svgpath';
 
 
 export class BeeLineParams extends LineGraphicsParams {
@@ -36,7 +37,6 @@ export default class BeeLine extends Line {
     stroke: string;
     /** 线宽 */
     width: number;
-
     
     getWidth() {
         return Math.abs(this.x2 - this.x);
@@ -63,22 +63,48 @@ export default class BeeLine extends Line {
         }
         this.contentGraphics.setAttribute('x2', this.x2 - this.x + '');
         this.contentGraphics.setAttribute('y2', this.y2 - this.y + '');
+
+        if (this.endArrowEl) {
+            this.endArrowEl.setAttribute('d', `
+                M ${this.x2 - this.x} ${this.y2 - this.y} 
+                L ${this.x2 - this.x + 7} ${this.y2 - this.y + 14} 
+                L ${this.x2 - this.x} ${this.y2 - this.y + 10} 
+                L ${this.x2 - this.x - 6} ${this.y2 - this.y + 14} 
+                Z`.replace(/\n|  /g, '')
+            );
+
+            const _path = svgpath(this.endArrowEl.getAttribute('d')).rotate(getAngle(this.x2 - this.x, this.y2 - this.y), this.x2 - this.x, this.y2 - this.y).toString();
+            this.endArrowEl.setAttribute('d', _path);
+        }
         
         return this;
     }
 
     render() {
+        let _endArrowEl: SVGElement;
+        let _endX = ~~(this.x2 - this.x);
+        let _endY = ~~(this.y2 - this.y);
+        if (this.endArrow) {
+
+            _endArrowEl = (<path 
+                d={`M${_endX} ${_endY} L ${_endX + 7} ${_endY + 14} L ${_endX} ${_endY + 10} L ${_endX - 6} ${_endY + 14} Z`}
+                stroke={this.stroke}
+                fill={this.stroke}
+            ></path>);
+        }
+
         return this._render(
             <line
                 x1="0"
                 y1="0"
-                x2={~~(this.x2 - this.x)}
-                y2={~~(this.y2 - this.y)}
+                x2={_endX}
+                y2={_endY}
                 stroke={this.stroke}
                 transform='translate(0.5 0.5)'
                 strokeWidth={this.width}
             >
-            </line>
+            </line>,
+            this.endArrowEl = _endArrowEl
         );
     }
 }

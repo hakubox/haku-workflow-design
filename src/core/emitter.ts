@@ -3,10 +3,8 @@ import AttachData from './attachdata';
 import { createModelId } from '@/tools';
 
 /** 事件分发 */
-export default class Emitter extends AttachData {
+export default class Emitter {
     constructor() {
-        super();
-        
         this.emitter = new EventEmitter();
 
         this.emitter['emitterId'] = createModelId(26);

@@ -9,6 +9,7 @@ import { cloneForce } from "@/lib/clone";
 import { globalTransform } from '@/core/transform';
 import { debug } from 'webpack';
 import { Editor } from '@/core';
+import AttachData from '@/core/attachdata';
 
 /** 图形初始化参数 */
 export class GraphicsParams {
@@ -29,7 +30,7 @@ export class GraphicsParams {
 }
 
 /** 图形 */
-export default abstract class Graphics extends Emitter {
+export default abstract class Graphics extends AttachData {
     constructor(config: GraphicsParams = {}) {
         super();
         this.id = createModelId(16);
@@ -98,18 +99,31 @@ export default abstract class Graphics extends Emitter {
     /** 事件类型 */
     events: Record<string, Array<(e: any) => void>> = {};
 
-    /** 新增事件 */
-    addEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (e: GlobalEventHandlersEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void {
-        if (!this.events[type]) this.events[type] = [];
-        this.events[type].push(listener);
-        this.contentGraphics.addEventListener(type, listener, options);
+    /** 事件绑定 */
+    on(eventType: EditorEventType, event: (source?) => void, bindThis?: any) {
+        Haku.on(ModuleLevel.Editor, this.id, eventType, event, bindThis);
+    }
+    /** 单次事件绑定 */
+    once(eventType: EditorEventType, event: (source?) => void, bindThis?: any) {
+        Haku.once(ModuleLevel.Editor, this.id, eventType, event, bindThis);
+    }
+    /** 事件绑定 */
+    emit(params: any = {}, ...otherParams: any[]) {
+        Haku.emit(ModuleLevel.Editor, this.id, params, ...otherParams);
     }
 
+    /** 新增事件 */
+    // addEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (e: GlobalEventHandlersEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void {
+    //     if (!this.events[type]) this.events[type] = [];
+    //     this.events[type].push(listener);
+    //     this.contentGraphics.addEventListener(type, listener, options);
+    // }
+
     /** 移除事件 */
-    removeEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (ev: GlobalEventHandlersEventMap[K]) => any, options?: boolean | EventListenerOptions): void {
-        this.events[type].push(listener);
-        this.contentGraphics.removeEventListener(type, listener, options);
-    }
+    // removeEvent<K extends keyof GlobalEventHandlersEventMap>(type: K, listener: (ev: GlobalEventHandlersEventMap[K]) => any, options?: boolean | EventListenerOptions): void {
+    //     this.events[type].push(listener);
+    //     this.contentGraphics.removeEventListener(type, listener, options);
+    // }
 
     /** 图形元素 */
     graphics: SVGElement;

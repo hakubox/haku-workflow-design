@@ -140,3 +140,27 @@ export function mergeProps(objA: Record<string, any>, objB: Record<string, any>)
         if (value !== null && value !== undefined) objA[key] = value;
     });
 }
+
+/** 计算箭头旋转角度 */
+// export function getAngle(x, y) {
+//     var l = Math.sqrt(x * x + y * y);
+//     var a = Math.acos(x / l);
+//     var ret = a * 180 / Math.PI;
+//     if (y < 0) {
+//         return 360 - ~~ret;
+//     }
+//     return ~~ret;
+// }
+
+/** 计算箭头旋转角度 */
+export function getAngle(x: number, y: number): number {
+    const l = Math.sqrt(x * x + y * y);
+    let angel = (Math.asin(x / l) * 180) / Math.PI;
+    if (y > 0) {
+        angel = 180 - angel;
+    }
+    if (angel < 0) {
+        angel = 360 + angel;
+    }
+    return angel;
+}

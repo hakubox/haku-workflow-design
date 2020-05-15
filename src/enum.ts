@@ -23,7 +23,7 @@ declare const enum EditorEventType {
     GraphicsMouseOut = 'graphics-mouse-out',
     /** 图形选择 */
     GraphicsActive = "graphics-active",
-    /** 图形选择 */
+    /** 图形移动 */
     GraphicsMove = "graphics-move",
     /** 图形文字编辑 */
     GraphicsTextEdited = "graphics-text-edited",

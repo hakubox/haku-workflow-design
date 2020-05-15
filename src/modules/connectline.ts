@@ -101,9 +101,9 @@ export default class ConnectLine extends EditorModule {
             y2: this.y1,
             stroke: 'red',
             notModule: true,
+            endArrow: true
         });
-        this.editor.addGraphics(this.currentConnectLine);
-        console.log(this.currentConnectLine.contentGraphics);
+        this.editor.insertGraphics(0, this.currentConnectLine);
     }
 
     /** 连接中 */
@@ -123,7 +123,6 @@ export default class ConnectLine extends EditorModule {
 
     /** 结束连接（连接图形） */
     private connectGraphicsEnd({ graphics, pointIndex, x, y }) {
-        console.log(graphics, x, y);
         this.connectLines(this.connectLines().concat([{
             connectLine: this.currentConnectLine,
             startGraphicsId: this.startGraphics.id,
@@ -132,6 +131,8 @@ export default class ConnectLine extends EditorModule {
             endGraphicsPointIndex: pointIndex,
             config: {}
         }] as ConnectModel[]));
+
+        this.graphicsMove({ x: graphics.x, y: graphics.y, graphics });
     }
 
     connectGraphics(graphicsA: Graphics, graphicsB: Graphics) {

@@ -46,6 +46,7 @@ const GLOBAL_ATTRIBUTES = {
     title: "title",
     translate: "translate",
 
+    d: "d",
     gid: "gid",
     x: "x",
     y: "y",
