@@ -1,8 +1,14 @@
 
 /** 设计器事件类型 */
 declare const enum EditorEventType {
+    /** 浏览器窗口大小改变事件 */
+    WindowSizeChange = 'window-size-change',
     /** 设计器初始化事件 */
     EditorInit = 'editor-init',
+    /** 设计器画布大小改变 */
+    EditorCanvasSizeChange = 'editor-canvas-size-change',
+    /** 设计器画布滚动 */
+    EditorCanvasScroll = 'editor-canvas-scroll',
     /** 鼠标按下 */
     EditorMouseDown = 'editor-mouse-down',
     /** 鼠标移动 */
@@ -11,6 +17,8 @@ declare const enum EditorEventType {
     EditorMouseUp = 'editor-mouse-up',
     /** 选择范围 */
     EditorAreaSelect = "editor-area-select",
+    /** 新增图形 */
+    GraphicsAddNew = 'graphics-add-new',
     /** 鼠标按下 */
     GraphicsMouseDown = 'graphics-mouse-down',
     /** 鼠标移动 */

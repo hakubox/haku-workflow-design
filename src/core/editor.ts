@@ -11,6 +11,7 @@ import { ModuleClass } from './module';
 import EditorModule from './eidtormodule';
 import { cloneForce } from '@/lib/clone';
 import AttachData from './attachdata';
+import { Drag } from '@/modules';
 
 class EditorParams {
     /** 绑定DOM节点 */
@@ -81,7 +82,7 @@ export default class Editor extends AttachData {
                 this.svgElement = createSVGElement('svg', 
                     { class: '' },
                     // 绘制统一操作的g标签
-                    this.svgGroupElement = createSVGElement('g', { class: '' }) as SVGGElement
+                    this.svgGroupElement = createSVGElement('g', { class: '',  attrs: { id: 'graphics-main-svg' } }) as SVGGElement
                 ) as SVGSVGElement,
             ),
             // 绘制属性栏区域
@@ -261,6 +262,8 @@ export default class Editor extends AttachData {
         // 重算画布宽高
         this.svgWidth = this.regionRect.width + this.canvasWidth * 2 + 120;
         this.svgHeight = this.regionRect.height + this.canvasHeight * 2 + 120;
+
+        this.emit(EditorEventType.EditorCanvasSizeChange, { width: this.svgWidth, height: this.svgHeight });
     }
 
     /** 根据视窗重绘背景网格图 */
@@ -358,6 +361,8 @@ export default class Editor extends AttachData {
             // if (this.isInit) {
                 this.reSizeComputed();
                 this.autoAdjustBackground();
+                
+                this.emit(EditorEventType.GraphicsAddNew, graphics[i]);
             // }
         }
     }
@@ -546,6 +551,11 @@ export default class Editor extends AttachData {
         });
 
         this.canvasElement.addEventListener('scroll', e => {
+            this.emit(EditorEventType.EditorCanvasScroll, { 
+                ...e, 
+                x: this.canvasElement.scrollLeft, 
+                y: this.canvasElement.scrollTop
+            });
         });
 
         this.svgElement.addEventListener('dblclick', e => {
@@ -575,6 +585,10 @@ export default class Editor extends AttachData {
 
         this.canvasElement.addEventListener('mouseleave', e => {
             // this.willScroll.reset();
+        });
+
+        window.addEventListener('resize', e => {
+            this.emit(EditorEventType.WindowSizeChange, e);
         });
 
         this.svgElement.addEventListener('mousemove', e => {

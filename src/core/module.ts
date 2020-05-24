@@ -19,7 +19,17 @@ export default abstract class Module {
         this.options = options;
 
         this.dependencies = options.dependencies || [];
+
+        const __init = this.init;
+        this.init = (...args) => {
+            if (this.isInit === false) {
+                this.isInit = true;
+                return __init.call(this, ...args);
+            }
+        }
     }
+
+    private isInit = false;
 
     /** 子模块 */
     dependencies: Module[] = [];
@@ -31,6 +41,9 @@ export default abstract class Module {
     static install() {
 
     }
+
+    /** 初始化 */
+    abstract init();
 
     /** 参数 */
     options: Record<string, any>;

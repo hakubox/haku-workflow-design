@@ -73,6 +73,7 @@ export default class BeeLine extends Line {
                 Z`.replace(/\n|  /g, '')
             );
 
+            
             const _path = svgpath(this.endArrowEl.getAttribute('d')).rotate(getAngle(this.x2 - this.x, this.y2 - this.y), this.x2 - this.x, this.y2 - this.y).toString();
             this.endArrowEl.setAttribute('d', _path);
         }
@@ -82,8 +83,8 @@ export default class BeeLine extends Line {
 
     render() {
         let _endArrowEl: SVGElement;
-        let _endX = ~~(this.x2 - this.x);
-        let _endY = ~~(this.y2 - this.y);
+        let _endX = this.x2 - this.x;
+        let _endY = this.y2 - this.y;
         if (this.endArrow) {
 
             _endArrowEl = (<path 

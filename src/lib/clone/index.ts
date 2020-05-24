@@ -183,7 +183,7 @@ function getWeakMap(){
 }
 
 /** 深度优先克隆 */
-export function cloneForce(x) {
+export function cloneForce<T>(x: T): T {
     const uniqueData = getWeakMap();
 
     const t = type(x);

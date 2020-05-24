@@ -1,7 +1,6 @@
 import Block, { BlockParams } from './block';
 import { createSVGElement } from "@/tools";
 import Transform, { globalTransform } from '@/core/transform';
-import Emitter from '@/core/emitter';
 
 export class RectParams extends BlockParams {
     /** 圆角半径 */

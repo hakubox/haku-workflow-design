@@ -1,5 +1,6 @@
 import { Editor } from '.';
 import Module, { ModuleParams } from './module';
+import { ModuleClass } from './global';
 
 export interface EditorModuleParams extends ModuleParams {
     editor: Editor;
@@ -26,6 +27,10 @@ export default abstract class EditorModule extends Module {
 
     /** 编辑器初始化钩子 */
     abstract init();
+
+    // this.editor.modules[ModuleClass][key] = value;
+    // ModuleData.setModuleValue(module: ModuleClass, key: string, value) {
+    // }
 
     /** 编辑器模块初始化 */
     moduleInit(editor: Editor) {

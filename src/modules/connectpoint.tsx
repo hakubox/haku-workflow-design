@@ -29,6 +29,9 @@ export default class ConnectPoint extends GraphicsModule {
     isMove: boolean = false;
 
     /** 连接点图形 */
+    _connectPoints = [];
+
+    /** 连接点图形 */
     get connectPoints(): { x: number, y: number, el: SVGElement }[] {
         return this.graphics.getData('connect-points');
     }

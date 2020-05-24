@@ -1,15 +1,19 @@
 /** 附加数据 */
 export default class AttachData {
+    constructor() {
+        this.data = {};
+    }
     
     /** 绑定数据 */
-    private _data: Record<string, any> = {};
+    private data: Record<string, any>;
 
     /** 获取额外数据 */
     getData(key: GraphicsData | string) {
-        return this._data[key];
+        return this.data[key];
     }
+
     /** 设置额外数据 */
     setData(key: GraphicsData | string, value: any) {
-        this._data[key] = value;
+        this.data[key] = value;
     }
 }

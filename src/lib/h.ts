@@ -28,6 +28,7 @@ const HTML_TAGS = {
 const GLOBAL_ATTRIBUTES = {
     accessKey: "accesskey",
     className: "class",
+    class: "class",
     contentEditable: "contenteditable",
     contextMenu: "contextmenu",
     dir: "dir",
@@ -65,7 +66,8 @@ const GLOBAL_ATTRIBUTES = {
     points: "points",
     pointerEvents: "pointer-events",
     textAnchor: "text-anchor",
-    dominantBaseline: "dominant-baseline"
+    dominantBaseline: "dominant-baseline",
+    viewBox: "viewBox"
 };
 const EVENT_HANDLERS = {
     onClick: "click",

@@ -1,6 +1,5 @@
 const path = require("path");
 const merge = require('webpack-merge');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const common = require('./webpack.common.js');
 const webpack = require('webpack');
@@ -17,9 +16,8 @@ if (process.argv.includes('--report')) {
 module.exports = merge(common, {
     // 运行环境：生产环境
     mode: 'production',
-    // 配置source map添加方式
-    // devtool: '#cheap-module-eval-source-map',
-    devtool: 'source-map',
+    // 配置source map添加方式，默认不配置source map
+    // devtool: 'cheap-source-map',
     // 配置模块
     module: {
         // 配置规则
@@ -87,10 +85,6 @@ module.exports = merge(common, {
             filename: '[name].[hash:8].css',
             // 分包文件名模板
             chunkFilename: '[id].[hash:8].css',
-        }),
-        // js压缩
-        new UglifyJSPlugin({
-            sourceMap: true
         }),
         // 排除不进行依赖的公共库（使用前需单独打包）
         new webpack.DllReferencePlugin({

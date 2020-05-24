@@ -1,10 +1,9 @@
 import { createModelId, mergeProps, createSVGElement } from '@/tools';
-import { TextAttrs, Location, BasicEventType } from '@/interface';
+import { TextAttrs, Location, BasicEventType, RenderConfig } from '@/interface';
 import { Span, Circle } from '.';
 import Module from '@/core/module';
 import { Haku } from '@/core/global';
 import GraphicsModule, { GraphicsModuleParams } from '@/core/graphicsmodule';
-import Emitter from '@/core/emitter';
 import { cloneForce } from "@/lib/clone";
 import { globalTransform } from '@/core/transform';
 import { debug } from 'webpack';
@@ -34,6 +33,7 @@ export default abstract class Graphics extends AttachData {
     constructor(config: GraphicsParams = {}) {
         super();
         this.id = createModelId(16);
+        this._initConfig = { ...config };
         mergeProps(this, config);
         Object.entries(config.data || {}).forEach(([key, value]) => this.setData(key, value));
 
@@ -49,29 +49,24 @@ export default abstract class Graphics extends AttachData {
             this.modules = [...Haku.modules.map(i => {
                 if (i.module.__proto__.name === 'GraphicsModule') {
                     // @ts-ignore
-                    return { module: new (i.module)(i.options).moduleInit(this, config.editor), options: cloneForce(i.options) };
+                    return { module: new (i.module)(i.options).moduleInit(this, config.editor), options: { ...i.options } };
                 }
             })].filter(i => i);
         }
 
         // 设置坐标
-        // this.setLocation = new Proxy(this.setLocation, {
-        //     apply: (target, thisArg, [x, y]: [number, number]) => {
-        //         if (x !== this.x || y !== this.y) {
-        //             this.emit(EditorEventType.GraphicsLocationChange, { x, y });
-        //             return target.call(this, x, y);
-        //         }
-        //     }
-        // });
-
         const __setLocation = this.setLocation;
         this.setLocation = (x: number, y:number) => {
             if (x !== this.x || y !== this.y) {
                 this.emit(EditorEventType.GraphicsLocationChange, { graphics: this, x, y });
-                return __setLocation.call(this, x, y);
+                __setLocation.call(this, x, y);
+                return this;
             }
         }
     }
+
+    /** 初始化配置 */
+    private readonly _initConfig: Record<string, any> = {};
 
     private _active = false;
     private _isEdit: boolean = false;
@@ -98,6 +93,12 @@ export default abstract class Graphics extends AttachData {
 
     /** 事件类型 */
     events: Record<string, Array<(e: any) => void>> = {};
+
+    /** 克隆节点 */
+    clone() {
+        // @ts-ignore
+        return new (this.constructor)(this._initConfig);
+    }
 
     /** 事件绑定 */
     on(eventType: EditorEventType, event: (source?) => void, bindThis?: any) {
@@ -356,7 +357,7 @@ export default abstract class Graphics extends AttachData {
     }
 
     /** 图形构造函数 */
-    abstract render(): SVGElement;
+    abstract render(config?: RenderConfig): SVGElement;
 
     /** 重绘 */
     painting() {

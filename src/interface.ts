@@ -19,6 +19,12 @@ export class BasicEventType {
     onTouchstart?: (e: any) => void;
 }
 
+/** 重绘配置 */
+export interface RenderConfig {
+    /** 仅基础节点 */
+    basicNode?: boolean;
+}
+
 /** 拖拽配置 */
 export interface DragConfig {
     /** 是否开始拖拽 */

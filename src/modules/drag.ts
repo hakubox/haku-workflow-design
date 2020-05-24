@@ -98,11 +98,11 @@ export default class Drag extends EditorModule {
         if (this.isStart) {
             const _moveBlock = this.editor.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock);
 
-            if (_moveBlock) {
-                _moveBlock.setLocation(
-                    e.offsetX - globalTransform.offsetX - this.x1 + this.minx, 
-                    e.offsetY - globalTransform.offsetY - this.y1 + this.miny
-                );
+            const _x = e.offsetX - globalTransform.offsetX - this.x1 + this.minx;
+            const _y = e.offsetY - globalTransform.offsetY - this.y1 + this.miny;
+
+            if (_moveBlock && (_moveBlock.x !== _x || _moveBlock.y !== _y)) {
+                _moveBlock.setLocation(_x, _y);
 
                 this.setGraphicsLocation(
                     this.x1,
@@ -113,10 +113,7 @@ export default class Drag extends EditorModule {
                 );
 
                 this.editor.willScroll.isStart === false && this.editor.autoScroll(() => {
-                    _moveBlock.setLocation(
-                        e.offsetX - globalTransform.offsetX - this.x1 + this.minx, 
-                        e.offsetY - globalTransform.offsetY - this.y1 + this.miny
-                    );
+                    _moveBlock.setLocation(_x, _y);
                     this.setGraphicsLocation(
                         this.x1,
                         this.y1,

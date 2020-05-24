@@ -5,7 +5,7 @@ import './interface';
 import { Rect, Diamond } from './graphics';
 import './modules';
 import { Haku } from './core/global';
-import { ToolBar, Drag, Label, ConnectPoint, ConnectLine } from './modules';
+import { ToolBar, Drag, Label, ConnectPoint, ConnectLine, Thumbnail } from './modules';
 
 
 console.time('editor-init');
@@ -17,19 +17,21 @@ editor.module(Label);
 editor.module(ConnectLine);
 editor.module(ConnectPoint);
 editor.module(ToolBar);
+editor.module(Thumbnail);
 
 // editor.module(Thumbnail, { 
 //     align: 'top-right', 
 //     canDrag: true 
 // });
 
-window['editor'] = editor;
+// 调试用
+window['__editor__'] = editor;
 
 editor.once(EditorEventType.EditorInit, function(this: Editor) {
     this.addGraphics(
         ...[
-            [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800],
-            [-800, 0], [-600, 0], [-400, 0], [-200, 0], [200, 0], [400, 0], [600, 0], [800, 0]
+            [0, -2000], [0, -1800], [0, -1600], [0, -1400], [0, -1200], [0, -1000], [0, -800], [0, -600], [0, -400], [0, -200], [0, 0], [0, 200], [0, 400], [0, 600], [0, 800], [0, 1000], [0, 1200], [0, 1400], [0, 1600], [0, 1800], [0, 2000],
+            [-2000, 0], [-1800, 0], [-1600, 0], [-1400, 0], [-1200, 0], [-1000, 0], [-800, 0], [-600, 0], [-400, 0], [-200, 0], [200, 0], [400, 0], [600, 0], [800, 0], [1000, 0], [1200, 0], [1400, 0], [1600, 0], [1800, 0], [2000, 0],
         ].map(i => new Rect({
             editor: this,
             radius: 8,
@@ -55,11 +57,6 @@ editor.once(EditorEventType.EditorInit, function(this: Editor) {
     this.addGuideLine(Direction.Horizontal, 0);
     this.addGuideLine(Direction.Vertical, 0);
 }, editor);
-console.log(window['editor']);
-
-setTimeout(() => {
-    console.log(Haku);
-}, 1000);
 
 if (module['hot']) {
     module['hot'].accept("./index.ts", function () {

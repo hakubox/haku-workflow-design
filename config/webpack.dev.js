@@ -78,6 +78,8 @@ module.exports = merge(common, {
         inline: true,
         // 热替换
         hot: true,
+        // 可使用ip打开
+        // useLocalIp: true,
 
         clientLogLevel: 'none'
     },
