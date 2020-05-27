@@ -41,32 +41,11 @@ export default class MoveBlock extends Rect {
     }
 
     /** 拖拽小方块边距 */
-
-
     setLocation(x: number, y: number) {
-        this.x = Math.round(x);
-        this.y = Math.round(y);
+        this.x = x;
+        this.y = y;
 
         this.graphics.setAttribute('transform', `translate(${x + globalTransform.offsetX},${y + globalTransform.offsetY})`);
-
-        // this.graphicsTarget.forEach(i => i.setLocation(x, y, transform));
-        // this.contentGraphics.setAttribute('x', x + globalTransform.offsetX + '');
-        // this.contentGraphics.setAttribute('y', y + globalTransform.offsetY + '');
-        
-        // const _dragmarkLocs = [
-        //     [this.x, this.y],
-        //     [this.x + this.width / 2, this.y],
-        //     [this.x + this.width, this.y],
-        //     [this.x, this.y + this.height / 2],
-        //     [this.x, this.y + this.height],
-        //     [this.x + this.width, this.y + this.height / 2],
-        //     [this.x + this.width / 2, this.y + this.height],
-        //     [this.x + this.width, this.y + this.height],
-        // ];
-        // this.dragmarks.forEach((i ,index) => {
-        //     i.setAttribute('x', _dragmarkLocs[index][0] + globalTransform.offsetX - 5 + '');
-        //     i.setAttribute('y', _dragmarkLocs[index][1] + globalTransform.offsetY - 5 + '');
-        // });
         return this;
     }
 

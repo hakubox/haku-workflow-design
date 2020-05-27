@@ -42,7 +42,7 @@ export default class Thumbnail extends EditorModule {
 
     /** 图形移动 */
     onGraphicsLocationChange({ graphics, x, y }: { graphics: Graphics, x: number, y: number }) {
-        this.graphicsMap[graphics.id].setLocation(x, y);
+        this.graphicsMap[graphics.id]?.setLocation?.(x, y);
     }
 
     /** 新增图形 */
@@ -91,10 +91,10 @@ export default class Thumbnail extends EditorModule {
             }),
         );
 
-        setTimeout(() => {
+        queueMicrotask(() => {
             this.width = this.element.offsetWidth;
             this.height = this.element.offsetHeight;
             this.onEditorInit();
-        }, 0);
+        });
     }
 }

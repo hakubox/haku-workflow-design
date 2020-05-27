@@ -35,23 +35,9 @@ export default class Diamond extends Rect {
     }
     
     setLocation(x: number, y: number) {
-        this.x = Math.round(x);
-        this.y = Math.round(y);
-        // let _x = this.x + globalTransform.offsetX;
-        // let _y = this.y + globalTransform.offsetY;
-        // this.contentGraphics.setAttribute('points', [
-        //     `${_x},${_y + this.height / 2}`,
-        //     `${_x + this.width / 2},${_y}`,
-        //     `${_x + this.width},${_y + this.height / 2}`,
-        //     `${_x + this.width / 2},${_y + this.height}`
-        // ].join(' '));
-        
+        this.x = x;
+        this.y = y;
         this.graphics.setAttribute('transform', `translate(${x + globalTransform.offsetX},${y + globalTransform.offsetY})`);
-
-        // this.textGraphics.textGraphics.setLocation(
-        //     this.textCoordinate.x,
-        //     this.textCoordinate.y
-        // );
         return this;
     }
 

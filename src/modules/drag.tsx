@@ -4,7 +4,7 @@ import { Editor } from '@/core';
 import EditorModule, { EditorModuleParams } from '@/core/eidtormodule';
 import { intersects } from '@/tools';
 import { globalTransform } from '@/core/transform';
-import { Graphics } from '@/graphics';
+import { Graphics, MoveBlock } from '@/graphics';
 
 /**
  * 拖拽
@@ -33,6 +33,12 @@ export default class Drag extends EditorModule {
     x2?: number;
     /** Y坐标结束点 */
     y2?: number;
+    /** 拖拽块 */
+    private _moveBlock: MoveBlock;
+    /** 拖拽图形组 */
+    dragGroup: SVGElement;
+    /** 拖拽图形列表 */
+    dragGraphicsList: Graphics[] = [];
     
     /** 最小X坐标 */
     get minx() {
@@ -80,13 +86,22 @@ export default class Drag extends EditorModule {
                 this.x1 = e.offsetX - globalTransform.offsetX;
                 this.y1 = e.offsetY - globalTransform.offsetY;
                 this.isStart = true;
+
+                this._moveBlock = this.editor.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock) as MoveBlock;
+                this.dragGraphicsList = this.editor.graphicsMap.filter(i => i.active);
+                
+                // 新增拖拽优化
+                // this.dragGroup = (<g transform={`translate(${0},${0})`}></g>);
+                // this.dragGraphicsList.forEach(i => {
+                //     this.dragGroup.appendChild(i.graphics);
+                // });
             }
         } else {
             this.locations = [];
             this.editor.clearMoveblockTool();
             this.x1 = e.offsetX - globalTransform.offsetX;
             this.y1 = e.offsetY - globalTransform.offsetY;
-            this.isStart = true;
+            this.isStart = false;
             this.editor.addSelector(
                 e.offsetX - globalTransform.offsetX,
                 e.offsetY - globalTransform.offsetY
@@ -96,41 +111,28 @@ export default class Drag extends EditorModule {
 
     mouseMove(e) {
         if (this.isStart) {
-            const _moveBlock = this.editor.graphicsGuideMap.find(o => o.type === GraphicsType.moveblock);
+            this.x2 = e.offsetX - globalTransform.offsetX;
+            this.y2 = e.offsetY - globalTransform.offsetY;
+            const _x = this.x2 - this.x1 + this.minx;
+            const _y = this.y2 - this.y1 + this.miny;
 
-            const _x = e.offsetX - globalTransform.offsetX - this.x1 + this.minx;
-            const _y = e.offsetY - globalTransform.offsetY - this.y1 + this.miny;
+            if (this._moveBlock && (this._moveBlock.x !== _x || this._moveBlock.y !== _y)) {
+                this._moveBlock.setLocation(_x, _y);
 
-            if (_moveBlock && (_moveBlock.x !== _x || _moveBlock.y !== _y)) {
-                _moveBlock.setLocation(_x, _y);
+                this.setGraphicsLocation(this.x1, this.y1, this.x2, this.y2, ...this.dragGraphicsList);
 
-                this.setGraphicsLocation(
-                    this.x1,
-                    this.y1,
-                    e.offsetX - globalTransform.offsetX, 
-                    e.offsetY - globalTransform.offsetY,
-                    ...this.editor.graphicsMap.filter(i => i.active)
-                );
-
-                this.editor.willScroll.isStart === false && this.editor.autoScroll(() => {
-                    _moveBlock.setLocation(_x, _y);
-                    this.setGraphicsLocation(
-                        this.x1,
-                        this.y1,
-                        e.offsetX - globalTransform.offsetX, 
-                        e.offsetY - globalTransform.offsetY,
-                        ...this.editor.graphicsMap.filter(i => i.active)
-                    );
-                });
-                this.editor.willScroll.isStart = this.editor.willScroll.willStart;
+                // this.editor.willScroll.isStart === false && this.editor.autoScroll(() => {
+                //     this._moveBlock.setLocation(_x, _y);
+                //     this.setGraphicsLocation(this.x1, this.y1, this.x2, this.y2, ...this.dragGraphicsList);
+                // });
+                // this.editor.willScroll.isStart = this.editor.willScroll.willStart;
             }
         }
     }
 
     mouseUp(e) {
         if (this.isStart) {
-            let _moveblock = this.editor.getMoveBlock();
-            if (_moveblock) _moveblock.isMove = false;
+            if (this._moveBlock) this._moveBlock.isMove = false;
             this.editor.reSizeComputed();
             this.editor.autoFit();
             this.reset();

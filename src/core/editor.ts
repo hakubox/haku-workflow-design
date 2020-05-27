@@ -655,10 +655,10 @@ export default class Editor extends AttachData {
             }
         })].filter(i => i);
 
-        setTimeout(() => {
+        queueMicrotask(() => {
             // 计算整体画布偏移量
-            globalTransform.offsetX = Math.round(this.canvasWidth + this.regionRect.width * 0.5);
-            globalTransform.offsetY = Math.round(this.canvasHeight + this.regionRect.height * 0.5);
+            globalTransform.offsetX = this.canvasWidth + this.regionRect.width * 0.5;
+            globalTransform.offsetY = this.canvasHeight + this.regionRect.height * 0.5;
             this.locationLeft = this.canvasWidth * 0.5 + this.regionRect.width * 0.5;
             this.locationTop = this.canvasHeight * 0.5 + this.regionRect.height * 0.5;
             this.autoFit();
@@ -673,7 +673,7 @@ export default class Editor extends AttachData {
             this.textEdit = new TextEdit({
                 parent: this.canvasElement
             });
-        }, 1);
+        });
     }
 
     /** 版本号 */
