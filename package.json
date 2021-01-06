@@ -18,7 +18,7 @@
     "author": "hakubox",
     "license": "ISC",
     "dependencies": {
-        "axios": "^0.19.2",
+        "axios": "^0.21.1",
         "babel-loader": "^8.1.0",
         "core-js": "^3.6.5",
         "eventemitter3": "^4.0.0",
